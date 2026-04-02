@@ -1,127 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>QR Validator – Persistent Counter</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <script src="https://unpkg.com/html5-qrcode"></script>
-  <style>
-    body {
-      margin: 0;
-      background: #0d1117;
-      color: #c9d1d9;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    #reader {
-      width: 300px;
-      max-width: 90vw;
-      margin: 20px auto;
-    }
-    #count {
-      font-size: 3rem;
-      font-weight: 800;
-      color: #2ea043;
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      background: #2ea043;
-      color: white;
-      margin-top: 10px;
-    }
-  </style>
-</head>
-<body>
+// ---- LOCAL PERSISTENT COUNTER (NO API) ----
+const STORAGE_KEY = "lfah_valid_scans_2026";
+let validScans = 0;
 
-  <h1>Asamblea Regional 2026</h1>
-  <p>Persistent valid scan counter (this device only)</p>
+// Load saved counter
+function loadCounter() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  validScans = stored ? parseInt(stored, 10) || 0 : 0;
+  countDisplay.innerText = validScans;
+}
 
-  <div id="reader"></div>
+// Save counter
+function saveCounter() {
+  localStorage.setItem(STORAGE_KEY, String(validScans));
+}
 
-  <div>
-    <div>Valid Admissions</div>
-    <span id="count">0</span>
-  </div>
+// Reset counter with PIN
+document.getElementById('resetScanBtn').addEventListener('click', () => {
+  const pin = prompt("Enter PIN to reset counter:");
+  if (pin === config.RESET_PIN) {
+    validScans = 0;
+    saveCounter();
+    countDisplay.innerText = validScans;
+    alert("Counter reset on this device.");
+  } else if (pin !== null) {
+    alert("Incorrect PIN.");
+  }
+});
 
-  <button id="resetBtn">Reset Counter</button>
+// ---- SCAN HANDLER ----
+function onScanSuccess(decodedText) {
+  if (isProcessing) return;
+  isProcessing = true;
 
-  <script>
-    // ---- SIMPLE PERSISTENT COUNTER (LOCAL ONLY) ----
-    const STORAGE_KEY = "asamblea_valid_scans";
-    let validScans = 0;
+  let isValid = false;
 
-    const countDisplay = document.getElementById("count");
-    const resetBtn = document.getElementById("resetBtn");
+  // Exact match rule
+  if (decodedText.trim() === config.VALID_PARAMETER) {
+    isValid = true;
+  }
 
-    // Load from localStorage on page load
-    function loadCounter() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      validScans = stored ? parseInt(stored, 10) || 0 : 0;
-      countDisplay.textContent = validScans;
-    }
+  triggerUI(isValid);
+}
 
-    // Save to localStorage
-    function saveCounter() {
-      localStorage.setItem(STORAGE_KEY, String(validScans));
-    }
+// ---- UI + COUNTER UPDATE ----
+async function triggerUI(isValid) {
+  overlay.style.display = 'flex';
 
-    // ---- QR SCANNER ----
-    function onScanSuccess(decodedText) {
-      // SIMPLE RULE: only count exact match
-      const VALID_PARAMETER = "AsambleaRegional2026";
+  if (isValid) {
+    validScans++;
+    saveCounter();
+    countDisplay.innerText = validScans;
 
-      if (decodedText.trim() === VALID_PARAMETER) {
-        validScans++;
-        saveCounter();
-        countDisplay.textContent = validScans;
-      }
+    overlay.className = 'valid-bg';
+    overlayText.innerText = 'VALID';
+    playSound(1200, 'sine');
+  } else {
+    overlay.className = 'flash-red';
+    overlayText.innerText = 'INVALID';
+    playSound(120, 'square');
+  }
 
-      // Optional: small debounce to avoid rapid double scans
-      html5QrCode.pause(true);
-      setTimeout(() => html5QrCode.resume(), 1000);
-    }
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    overlay.className = '';
+    isProcessing = false;
+  }, 2500);
+}
 
-    const html5QrCode = new Html5Qrcode("reader");
-
-    function startScanner() {
-      const config = {
-        fps: 10,
-        qrbox: (vw, vh) => {
-          const size = Math.floor(Math.min(vw, vh) * 0.7);
-          return { width: size, height: size };
-        }
-      };
-
-      html5QrCode
-        .start({ facingMode: "environment" }, config, onScanSuccess)
-        .catch(err => {
-          alert("Camera Error: " + err);
-          console.error(err);
-        });
-    }
-
-    // Reset button
-    resetBtn.addEventListener("click", () => {
-      if (confirm("Reset counter on this device?")) {
-        validScans = 0;
-        saveCounter();
-        countDisplay.textContent = validScans;
-      }
-    });
-
-    // Init
-    loadCounter();
-    startScanner();
-  </script>
-</body>
-</html>
+// ---- INIT ----
+loadCounter();
