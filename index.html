@@ -5,8 +5,214 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Premium QR Validator</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="config.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+:root {
+    --bg-color: #0d1117;
+    --card-bg: rgba(22, 27, 34, 0.7);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-color: #c9d1d9;
+    --text-muted: #8b949e;
+    --primary: #2ea043;
+    --primary-hover: #238636;
+    --danger: #da3633;
+    --valid-green: #238636;
+    --invalid-red: #da3633;
+}
+
+body {
+    margin: 0;
+    background: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+h1, h2 {
+    color: #ffffff;
+    margin-top: 0;
+    letter-spacing: -0.5px;
+}
+
+/* Glassmorphism Card */
+.glass-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+.panel {
+    display: flex;
+    height: 100vh;
+    justify-content: center;
+    align-items: center;
+}
+
+.glass-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+}
+
+/* Inputs */
+.input-group {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.input-group input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px 15px;
+    color: #ffffff;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-group input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(46, 160, 67, 0.2);
+}
+
+/* Buttons */
+button {
+    cursor: pointer;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background: var(--primary);
+    color: white;
+    width: 100%;
+    margin-top: 10px;
+    box-shadow: 0 4px 14px rgba(46, 160, 67, 0.4);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Scanner UI */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 5%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.header h2 { margin: 0; }
+
+#reader-container {
+    width: 90%;
+    max-width: 500px;
+    margin: 0 auto;
+    border-radius: 20px;
+    padding: 5px;
+    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.5));
+    border: 1px solid var(--border-color);
+}
+
+#reader {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+/* Stats */
+#stats {
+    margin-top: 30px;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+#count {
+    font-size: 4.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    display: block;
+    margin-top: 5px;
+    text-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+}
+
+/* Full Screen Overlay */
+#overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-size: 12vw;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.valid-bg { 
+    background-color: var(--valid-green); 
+    color: white;
+    animation: valid-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.flash-red { 
+    color: white;
+    background: var(--invalid-red);
+    animation: rapid-blink 0.15s infinite; 
+}
+
+@keyframes valid-pop {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes rapid-blink {
+    0% { background: var(--invalid-red); }
+    50% { background: #000000; }
+    100% { background: var(--invalid-red); }
+}
+    </style>
 </head>
 <body>
 
@@ -38,6 +244,168 @@
         <span id="overlayText">VALID</span>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+// CONFIGURATION
+const APP_CONFIG = {
+    // If set, ONLY this exact text will be considered VALID.
+    // Leave empty ("") to use default date-matching logic.
+    VALID_PARAMETER: "AsambleaRegional2026", 
+
+    // If set, this exact text will explicitly be INVALID.
+    INVALID_PARAMETER: "",
+
+    // PIN code required to reset the admission counter
+    RESET_PIN: "1234"
+};
+
+// APPLICATION LOGIC
+let validScans = parseInt(localStorage.getItem('validScans') || '0');
+let isProcessing = false;
+let audioCtx;
+
+const setupDiv = document.getElementById('setup');
+const mainUIDiv = document.getElementById('mainUI');
+const overlay = document.getElementById('overlay');
+const countDisplay = document.getElementById('count');
+const overlayText = document.getElementById('overlayText');
+
+// Initialize the display with persisted data
+countDisplay.innerText = validScans;
+
+const config = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG : {
+    VALID_PARAMETER: "",
+    INVALID_PARAMETER: "",
+    RESET_PIN: "1234"
+};
+
+document.getElementById('startBtn').addEventListener('click', function() {
+    // Init audio context on user interaction
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Toggle UI
+    setupDiv.style.display = 'none';
+    mainUIDiv.style.display = 'block';
+    
+    startScanner();
+});
+
+document.getElementById('resetScanBtn').addEventListener('click', function() {
+    const pin = prompt('Enter PIN to reset counter:');
+    if (pin === config.RESET_PIN) {
+        validScans = 0;
+        localStorage.setItem('validScans', validScans);
+        countDisplay.innerText = validScans;
+        alert('Counter reset successfully.');
+    } else if (pin !== null) {
+        alert('Incorrect PIN.');
+    }
+});
+
+function playSound(freq, waveType) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = waveType || 'sine';
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    // Taper off sound quickly
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+function checkDateLogic(decodedText) {
+    const today = new Date().toISOString().split('T')[0];
+    const dates = decodedText.trim().split('|');
+
+    if (dates.length === 2) {
+        // Range logic: YYYY-MM-DD|YYYY-MM-DD
+        const start = dates[0];
+        const end = dates[1];
+        if (today >= start && today <= end) {
+            return true;
+        }
+    } else if (dates.length === 1) {
+        // Single day logic: YYYY-MM-DD
+        if (decodedText.trim() === today) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function onScanSuccess(decodedText) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    let isValid = false;
+    let explicitStatus = false;
+
+    // Check custom valid parameter
+    if (config.VALID_PARAMETER !== "") {
+        if (decodedText.trim() === config.VALID_PARAMETER) {
+            isValid = true;
+            explicitStatus = true;
+        }
+    }
+
+    // Check custom invalid parameter
+    if (!isValid && config.INVALID_PARAMETER !== "") {
+        if (decodedText.trim() === config.INVALID_PARAMETER) {
+            isValid = false;
+            explicitStatus = true;
+        }
+    }
+
+    // Fallback to Date Logic if no parameter rules matched or were supplied
+    if (!explicitStatus) {
+        isValid = checkDateLogic(decodedText);
+    }
+
+    triggerUI(isValid);
+}
+
+function triggerUI(isValid) {
+    overlay.style.display = 'flex';
+
+    if (isValid) {
+        validScans++;
+        localStorage.setItem('validScans', validScans);
+        countDisplay.innerText = validScans;
+        overlay.className = 'valid-bg';
+        overlayText.innerText = 'VALID';
+        playSound(1200, 'sine'); // High pitch beep
+    } else {
+        overlay.className = 'flash-red';
+        overlayText.innerText = 'INVALID';
+        playSound(120, 'square'); // Low pitch buzz
+    }
+
+    // Lock scanner for 2.5 seconds to prevent double scans
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        overlay.className = '';
+        isProcessing = false;
+    }, 2500);
+}
+
+function startScanner() {
+    const html5QrCode = new Html5Qrcode("reader");
+    const renderConfig = { 
+        fps: 15, 
+        qrbox: { width: 280, height: 280 },
+        aspectRatio: 1.0
+    };
+
+    html5QrCode.start(
+        { facingMode: "environment" }, 
+        renderConfig, 
+        onScanSuccess
+    ).catch(err => {
+        alert("Camera Error: " + err);
+    });
+}
+    </script>
 </body>
 </html>
