@@ -63,7 +63,7 @@
             font-size: 5rem;
             font-weight: 800;
             line-height: 1;
-            color: var(--valid-color); /* Changed to Green */
+            color: var(--valid-color);
         }
 
         .label {
@@ -98,11 +98,17 @@
             align-items: center;
             justify-content: center;
             z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .overlay-text {
-            font-size: 6rem;
+            /* Changed to dynamic viewport units to prevent cutoff */
+            font-size: 18vw; 
             font-weight: 900;
+            text-align: center;
+            width: 100%;
+            word-wrap: break-word;
         }
 
         .valid-overlay { background-color: var(--valid-color); }
@@ -116,7 +122,6 @@
             50% { background-color: #800000; }
         }
 
-        /* Button styling for library UI */
         #reader__dashboard_section_csr button {
             background: #444 !important;
             color: white !important;
@@ -154,9 +159,9 @@
     <script>
         const CONFIG = {
             pin: "1234",
-            validPhrases: ["REGIONAL26", "OCHOA-2026"],
+            validPhrases: ["AUTHORIZED", "OCHOA-2026"],
             dateRange: {
-                start: new Date('2026-01-01T00:00:00'),
+                start: new Date('2026-04-01T00:00:00'),
                 end: new Date('2026-04-04T23:59:59')
             },
             feedbackDelay: 2500
