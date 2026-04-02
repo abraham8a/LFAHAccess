@@ -255,11 +255,15 @@ const APP_CONFIG = {
     INVALID_PARAMETER: "",
 
     // PIN code required to reset the admission counter
-    RESET_PIN: "1234"
+    RESET_PIN: "1234",
+    
+    // Globally unique namespace for cross-device sync
+    GLOBAL_NAMESPACE: "lfah-access-global-event-2026"
 };
 
 // APPLICATION LOGIC
-let validScans = parseInt(localStorage.getItem('validScans') || '0');
+let validScans = 0; // Will be polled globally
+let currentSessionId = 0;
 let isProcessing = false;
 let audioCtx;
 
@@ -269,33 +273,69 @@ const overlay = document.getElementById('overlay');
 const countDisplay = document.getElementById('count');
 const overlayText = document.getElementById('overlayText');
 
-// Initialize the display with persisted data
-countDisplay.innerText = validScans;
-
 const config = typeof APP_CONFIG !== 'undefined' ? APP_CONFIG : {
-    VALID_PARAMETER: "",
-    INVALID_PARAMETER: "",
-    RESET_PIN: "1234"
+    VALID_PARAMETER: "", INVALID_PARAMETER: "", RESET_PIN: "1234", GLOBAL_NAMESPACE: "lfah-access-global-event-2026"
 };
 
-document.getElementById('startBtn').addEventListener('click', function() {
-    // Init audio context on user interaction
+const COUNT_API_BASE = `https://api.counterapi.dev/v1/${config.GLOBAL_NAMESPACE}`;
+
+// Polling function to keep devices in sync
+async function fetchGlobalState() {
+    try {
+        // 1. Check current session ID
+        let sessionRes = await fetch(`${COUNT_API_BASE}/session_id`);
+        if (!sessionRes.ok) throw new Error("No session");
+        let sessionData = await sessionRes.json();
+        currentSessionId = sessionData.count || 0;
+    } catch(e) {
+        currentSessionId = 0;
+    }
+
+    try {
+        // 2. Fetch scans for this active session
+        let scansRes = await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}`);
+        if (scansRes.ok) {
+            let scansData = await scansRes.json();
+            validScans = scansData.count || 0;
+        } else {
+            validScans = 0;
+        }
+    } catch(e) {
+        validScans = 0;
+    }
+
+    // Update UI
+    countDisplay.innerText = validScans;
+}
+
+// Automatically sync every 3 seconds
+setInterval(fetchGlobalState, 3000);
+
+document.getElementById('startBtn').addEventListener('click', async function() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Toggle UI
     setupDiv.style.display = 'none';
     mainUIDiv.style.display = 'block';
+    
+    // Fetch initial state immediately
+    countDisplay.innerText = "...";
+    await fetchGlobalState();
     
     startScanner();
 });
 
-document.getElementById('resetScanBtn').addEventListener('click', function() {
-    const pin = prompt('Enter PIN to reset counter:');
+document.getElementById('resetScanBtn').addEventListener('click', async function() {
+    const pin = prompt('Enter PIN to reset global counter:');
     if (pin === config.RESET_PIN) {
-        validScans = 0;
-        localStorage.setItem('validScans', validScans);
-        countDisplay.innerText = validScans;
-        alert('Counter reset successfully.');
+        try {
+            validScans = 0;
+            countDisplay.innerText = "...";
+            // Increment the session ID globally to "reset" the count to a fresh 0 state
+            await fetch(`${COUNT_API_BASE}/session_id/up`);
+            await fetchGlobalState();
+            alert('Global counter reset successfully active across all devices!');
+        } catch(e) {
+            alert('Error connecting to sync server. Try again.');
+        }
     } else if (pin !== null) {
         alert('Incorrect PIN.');
     }
@@ -320,14 +360,12 @@ function checkDateLogic(decodedText) {
     const dates = decodedText.trim().split('|');
 
     if (dates.length === 2) {
-        // Range logic: YYYY-MM-DD|YYYY-MM-DD
         const start = dates[0];
         const end = dates[1];
         if (today >= start && today <= end) {
             return true;
         }
     } else if (dates.length === 1) {
-        // Single day logic: YYYY-MM-DD
         if (decodedText.trim() === today) {
             return true;
         }
@@ -366,16 +404,21 @@ function onScanSuccess(decodedText) {
     triggerUI(isValid);
 }
 
-function triggerUI(isValid) {
+async function triggerUI(isValid) {
     overlay.style.display = 'flex';
 
     if (isValid) {
+        // Optimistic UI Update locally for instant feedback
         validScans++;
-        localStorage.setItem('validScans', validScans);
         countDisplay.innerText = validScans;
         overlay.className = 'valid-bg';
         overlayText.innerText = 'VALID';
         playSound(1200, 'sine'); // High pitch beep
+        
+        // Push globally behind the scenes
+        try {
+            await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}/up`);
+        } catch(e) { console.error('Failed to sync scan', e); }
     } else {
         overlay.className = 'flash-red';
         overlayText.innerText = 'INVALID';
