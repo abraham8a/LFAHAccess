@@ -103,7 +103,6 @@
         }
 
         .overlay-text {
-            /* Changed to dynamic viewport units to prevent cutoff */
             font-size: 18vw; 
             font-weight: 900;
             text-align: center;
@@ -112,14 +111,20 @@
         }
 
         .valid-overlay { background-color: var(--valid-color); }
+        
         .invalid-overlay {
-            background-color: var(--invalid-color);
-            animation: flash-red 0.3s infinite;
+            /* Cycles through all colors in 3 seconds */
+            animation: rainbow-flash 3s linear infinite;
         }
 
-        @keyframes flash-red {
-            0%, 100% { background-color: var(--invalid-color); }
-            50% { background-color: #800000; }
+        @keyframes rainbow-flash {
+            0%   { background-color: hsl(0, 100%, 50%); }
+            17%  { background-color: hsl(60, 100%, 50%); }
+            33%  { background-color: hsl(120, 100%, 50%); }
+            50%  { background-color: hsl(180, 100%, 50%); }
+            67%  { background-color: hsl(240, 100%, 50%); }
+            83%  { background-color: hsl(300, 100%, 50%); }
+            100% { background-color: hsl(360, 100%, 50%); }
         }
 
         #reader__dashboard_section_csr button {
