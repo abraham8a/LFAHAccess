@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>QR Gatekeeper V2</title>
+    <title>Asamblea Regional 2026 V2</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         :root {
@@ -60,10 +60,12 @@
         }
 
         .count-display {
-            font-size: 5rem;
+            font-size: 6rem;
             font-weight: 800;
             line-height: 1;
             color: var(--valid-color);
+            cursor: pointer; /* Indicates it is clickable */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .label {
@@ -72,20 +74,6 @@
             text-transform: uppercase;
             opacity: 0.8;
             margin-top: 5px;
-        }
-
-        .controls {
-            margin-top: 15px;
-        }
-
-        #reset-btn {
-            background: transparent;
-            color: #444;
-            border: 1px solid #333;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.7rem;
         }
 
         .overlay {
@@ -129,8 +117,8 @@
             background: #444 !important;
             color: white !important;
             border: none !important;
-            padding: 8px 15px !important;
-            border-radius: 4px !important;
+            padding: 10px 20px !important;
+            border-radius: 5px !important;
         }
     </style>
 </head>
@@ -143,11 +131,7 @@
         
         <div id="stats-container">
             <div class="count-display" id="scan-count">0</div>
-            <div class="label">Acceso Total</div>
-            
-            <div class="controls">
-                <button id="reset-btn">RESET</button>
-            </div>
+            <div class="label">Total Scans</div>
         </div>
     </div>
 
@@ -160,7 +144,6 @@
     </div>
 
     <script>
-        // Ding sound effect embedded as Base64
         const dingSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YV9vT18AZEp3Z3iHj5mXmZ+dn52fmZ+YmZmWlpSOf3Z0cnJyc3R2eXp9f3+AgYKDhIWGh4eIiYqLi4yNjY6Ojo6Pjo+Pjo6Pjo6Ojo6NjYyLi4mIiIaGhYSDg4KBgX99fHt6eXh3dnRycXFwcG9ubWxrZGVjYWFhX15cXFxbWllYV1ZUVFNSUFBPT05NTEtKSURCQkJCQUFCQUFBQUFBP0FBQUE=");
 
         const CONFIG = {
@@ -204,7 +187,7 @@
             }
 
             if (isValid) {
-                dingSound.play(); // Play chime on valid scan
+                try { dingSound.play(); } catch(e) {}
                 showOverlay('valid-screen');
                 updateCount();
             } else {
@@ -233,14 +216,17 @@
 
         html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
 
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            const entry = prompt("Enter PIN:");
+        // Reset functionality triggered by tapping the tally number
+        document.getElementById('scan-count').addEventListener('click', () => {
+            const entry = prompt("Enter PIN to reset tally:");
             if (entry === CONFIG.pin) {
-                if (confirm("Reset counter?")) {
+                if (confirm("Reset counter to zero?")) {
                     scanCount = 0;
                     localStorage.setItem('qr_tally_v2', 0);
                     document.getElementById('scan-count').innerText = 0;
                 }
+            } else if (entry !== null) {
+                alert("Incorrect PIN.");
             }
         });
     </script>
