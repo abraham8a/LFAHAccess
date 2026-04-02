@@ -1,181 +1,478 @@
-// CONFIGURATION
-const APP_CONFIG = {
-    VALID_PARAMETER: "AsambleaRegional2026",
-    INVALID_PARAMETER: "",
-    RESET_PIN: "1234",
-    GLOBAL_NAMESPACE: "lfah-access-global-event-2026"
-};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Premium QR Validator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-// GLOBAL STATE
-let validScans = 0;
-let currentSessionId = 0;
-let isProcessing = false;
-let audioCtx;
+  <!-- QR Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
 
-const setupDiv = document.getElementById('setup');
-const mainUIDiv = document.getElementById('mainUI');
-const overlay = document.getElementById('overlay');
-const countDisplay = document.getElementById('count');
-const overlayText = document.getElementById('overlayText');
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 
-const config = APP_CONFIG;
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: rgba(22, 27, 34, 0.7);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-color: #c9d1d9;
+      --text-muted: #8b949e;
+      --primary: #2ea043;
+      --primary-hover: #238636;
+      --danger: #da3633;
+      --valid-green: #238636;
+      --invalid-red: #da3633;
+    }
 
-// CountAPI base
-const COUNT_API_BASE = `https://api.countapi.xyz`;
+    * {
+      box-sizing: border-box;
+    }
 
-// Fetch global state
-async function fetchGlobalState() {
-    try {
-        // Fetch session ID
+    body {
+      margin: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+      overflow: hidden;
+      touch-action: manipulation;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1, h2 {
+      color: #ffffff;
+      margin-top: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .panel {
+      display: flex;
+      flex: 1;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    }
+
+    .glass-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+
+    button {
+      cursor: pointer;
+      border-radius: 10px;
+      border: none;
+      font-family: inherit;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      background: var(--primary);
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+      box-shadow: 0 4px 14px rgba(46, 160, 67, 0.4);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      padding: 8px 16px;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main UI */
+    #mainUI {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      height: 100dvh;
+      padding: 3dvh 0;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 5%;
+      width: 90%;
+      max-width: 500px;
+      flex-shrink: 0;
+    }
+
+    .header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    #reader-container {
+      width: 90%;
+      max-width: 500px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 15px 0;
+      border-radius: 20px;
+      padding: 5px;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.5));
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    #reader {
+      width: 100%;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #reader video {
+      object-fit: cover !important;
+    }
+
+    #stats {
+      flex-shrink: 0;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    #count {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--primary);
+      display: block;
+      margin-top: 2px;
+      text-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
+    }
+
+    /* Overlay */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-size: 10vw;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .valid-bg {
+      background-color: var(--valid-green);
+      color: white;
+      animation: valid-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .flash-red {
+      color: white;
+      background: var(--invalid-red);
+      animation: rapid-blink 0.15s infinite;
+    }
+
+    @keyframes valid-pop {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes rapid-blink {
+      0% { background: var(--invalid-red); }
+      50% { background: #000000; }
+      100% { background: var(--invalid-red); }
+    }
+
+    @media (orientation: landscape) and (max-height: 600px) {
+      #mainUI {
+        flex-direction: row;
+        padding: 5% 5%;
+      }
+      .header {
+        flex-direction: column;
+        width: 30%;
+        max-width: none;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 15px;
+      }
+      #reader-container {
+        width: 40%;
+        margin: 0;
+        height: 100%;
+      }
+      #stats {
+        width: 30%;
+        text-align: right;
+      }
+      #count {
+        font-size: 3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Setup Screen -->
+  <div id="setup" class="panel">
+    <div class="glass-card">
+      <h1>Asamblea Regional 2026</h1>
+      <p>Scanner System Ready</p>
+      <button id="startBtn" class="btn-primary">Tap to Start Scanner</button>
+    </div>
+  </div>
+
+  <!-- Main Scanner UI -->
+  <div id="mainUI">
+    <div class="header">
+      <h2>Asamblea Regional 2026</h2>
+      <button id="resetScanBtn" class="btn-secondary">Reset</button>
+    </div>
+
+    <div id="reader-container">
+      <div id="reader"></div>
+    </div>
+
+    <div id="stats">
+      Valid Admissions
+      <span id="count">0</span>
+    </div>
+  </div>
+
+  <!-- Fullscreen Overlay -->
+  <div id="overlay">
+    <span id="overlayText">VALID</span>
+  </div>
+
+  <script>
+    // CONFIGURATION
+    const APP_CONFIG = {
+      VALID_PARAMETER: "AsambleaRegional2026", // exact text to be valid (optional)
+      INVALID_PARAMETER: "",                   // exact text to be invalid (optional)
+      RESET_PIN: "1234",                       // PIN to reset global counter
+      GLOBAL_NAMESPACE: "lfah-access-global-event-2026" // global shared key
+    };
+
+    // GLOBAL STATE
+    let validScans = 0;
+    let currentSessionId = 0;
+    let isProcessing = false;
+    let audioCtx;
+
+    const setupDiv = document.getElementById('setup');
+    const mainUIDiv = document.getElementById('mainUI');
+    const overlay = document.getElementById('overlay');
+    const countDisplay = document.getElementById('count');
+    const overlayText = document.getElementById('overlayText');
+
+    const config = APP_CONFIG;
+
+    // CountAPI base
+    const COUNT_API_BASE = 'https://api.countapi.xyz';
+
+    // Fetch global state (session + scans)
+    async function fetchGlobalState() {
+      // Ensure session_id exists
+      try {
         let sessionRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/session_id`);
-        let sessionData = await sessionRes.json();
+        if (!sessionRes.ok) {
+          // Initialize if missing
+          await fetch(`${COUNT_API_BASE}/create?namespace=${config.GLOBAL_NAMESPACE}&key=session_id&value=0`);
+          sessionRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/session_id`);
+        }
+        const sessionData = await sessionRes.json();
         currentSessionId = sessionData.value || 0;
-    } catch {
+      } catch (e) {
+        console.error("Session fetch error:", e);
         currentSessionId = 0;
-    }
+      }
 
-    try {
-        // Fetch scans for this session
+      // Ensure scans counter exists for this session
+      try {
         let scansRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
-        let scansData = await scansRes.json();
+        if (!scansRes.ok) {
+          await fetch(`${COUNT_API_BASE}/create?namespace=${config.GLOBAL_NAMESPACE}&key=scans_session_${currentSessionId}&value=0`);
+          scansRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
+        }
+        const scansData = await scansRes.json();
         validScans = scansData.value || 0;
-    } catch {
+      } catch (e) {
+        console.error("Scans fetch error:", e);
         validScans = 0;
+      }
+
+      countDisplay.innerText = validScans;
     }
 
-    countDisplay.innerText = validScans;
-}
+    // Sync every 3 seconds
+    setInterval(fetchGlobalState, 3000);
 
-// Sync every 3 seconds
-setInterval(fetchGlobalState, 3000);
+    // Start button
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      setupDiv.style.display = 'none';
+      mainUIDiv.style.display = 'flex';
+      countDisplay.innerText = "...";
+      await fetchGlobalState();
+      startScanner();
+    });
 
-// Start button
-document.getElementById('startBtn').addEventListener('click', async () => {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    setupDiv.style.display = 'none';
-    mainUIDiv.style.display = 'flex';
-
-    countDisplay.innerText = "...";
-    await fetchGlobalState();
-    startScanner();
-});
-
-// Reset button
-document.getElementById('resetScanBtn').addEventListener('click', async () => {
-    const pin = prompt('Enter PIN to reset global counter:');
-    if (pin !== config.RESET_PIN) {
+    // Reset button
+    document.getElementById('resetScanBtn').addEventListener('click', async () => {
+      const pin = prompt('Enter PIN to reset global counter:');
+      if (pin !== config.RESET_PIN) {
         if (pin !== null) alert('Incorrect PIN.');
         return;
-    }
+      }
 
-    try {
-        // Increment session ID = resets counter
+      try {
+        // Increment session ID = new logical session, fresh counter
         await fetch(`${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/session_id`);
         await fetchGlobalState();
         alert('Global counter reset successfully!');
-    } catch {
+      } catch (e) {
+        console.error("Reset error:", e);
         alert('Error connecting to sync server.');
+      }
+    });
+
+    // Sound helper
+    function playSound(freq, waveType) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = waveType || 'sine';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+      osc.stop(audioCtx.currentTime + 0.5);
     }
-});
 
-// Sound
-function playSound(freq, waveType) {
-    if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = waveType || 'sine';
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
-    osc.stop(audioCtx.currentTime + 0.5);
-}
+    // Date logic fallback (YYYY-MM-DD or start|end)
+    function checkDateLogic(decodedText) {
+      const today = new Date().toISOString().split('T')[0];
+      const parts = decodedText.trim().split('|');
 
-// Date logic
-function checkDateLogic(decodedText) {
-    const today = new Date().toISOString().split('T')[0];
-    const parts = decodedText.trim().split('|');
-
-    if (parts.length === 2) {
+      if (parts.length === 2) {
         return today >= parts[0] && today <= parts[1];
-    }
-    if (parts.length === 1) {
+      }
+      if (parts.length === 1) {
         return decodedText.trim() === today;
+      }
+      return false;
     }
-    return false;
-}
 
-// Scan handler
-function onScanSuccess(decodedText) {
-    if (isProcessing) return;
-    isProcessing = true;
+    // Scan handler
+    function onScanSuccess(decodedText) {
+      if (isProcessing) return;
+      isProcessing = true;
 
-    let isValid = false;
-    let explicit = false;
+      let isValid = false;
+      let explicit = false;
 
-    if (config.VALID_PARAMETER && decodedText.trim() === config.VALID_PARAMETER) {
+      if (config.VALID_PARAMETER && decodedText.trim() === config.VALID_PARAMETER) {
         isValid = true;
         explicit = true;
-    }
+      }
 
-    if (!isValid && config.INVALID_PARAMETER && decodedText.trim() === config.INVALID_PARAMETER) {
+      if (!isValid && config.INVALID_PARAMETER && decodedText.trim() === config.INVALID_PARAMETER) {
         isValid = false;
         explicit = true;
-    }
+      }
 
-    if (!explicit) {
+      if (!explicit) {
         isValid = checkDateLogic(decodedText);
+      }
+
+      triggerUI(isValid);
     }
 
-    triggerUI(isValid);
-}
+    // UI + global sync
+    async function triggerUI(isValid) {
+      overlay.style.display = 'flex';
 
-// UI + global sync
-async function triggerUI(isValid) {
-    overlay.style.display = 'flex';
-
-    if (isValid) {
+      if (isValid) {
         validScans++;
         countDisplay.innerText = validScans;
         overlay.className = 'valid-bg';
         overlayText.innerText = 'VALID';
         playSound(1200, 'sine');
 
-        // Push to global counter
         try {
-            await fetch(`${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
+          await fetch(`${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
         } catch (e) {
-            console.error("Sync failed", e);
+          console.error("Sync failed", e);
         }
-    } else {
+      } else {
         overlay.className = 'flash-red';
         overlayText.innerText = 'INVALID';
         playSound(120, 'square');
-    }
+      }
 
-    setTimeout(() => {
+      setTimeout(() => {
         overlay.style.display = 'none';
         overlay.className = '';
         isProcessing = false;
-    }, 2500);
-}
+      }, 2500);
+    }
 
-// Scanner
-function startScanner() {
-    const html5QrCode = new Html5Qrcode("reader");
+    // Scanner
+    function startScanner() {
+      const html5QrCode = new Html5Qrcode("reader");
 
-    const renderConfig = {
+      const renderConfig = {
         fps: 15,
         qrbox: (vw, vh) => {
-            let size = Math.floor(Math.min(vw, vh) * 0.7);
-            return { width: size, height: size };
+          const size = Math.floor(Math.min(vw, vh) * 0.7);
+          return { width: size, height: size };
         }
-    };
+      };
 
-    html5QrCode.start(
-        { facingMode: "environment" },
-        renderConfig,
-        onScanSuccess
-    ).catch(err => alert("Camera Error: " + err));
-}
+      html5QrCode
+        .start({ facingMode: "environment" }, renderConfig, onScanSuccess)
+        .catch(err => {
+          alert("Camera Error: " + err);
+          console.error(err);
+        });
+    }
+  </script>
+</body>
+</html>
