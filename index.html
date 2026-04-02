@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
@@ -26,74 +26,74 @@
             flex-direction: column;
         }
 
-        /* Responsive Layout */
+        header {
+            text-align: center;
+            padding: 15px 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: #1e1e1e;
+            border-bottom: 1px solid #333;
+        }
+
         #app-container {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: space-evenly;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         #reader {
             width: 100%;
-            max-width: 450px;
-            border: 2px solid #333 !important;
+            max-width: 400px;
+            border: 2px solid #444 !important;
             border-radius: 12px;
             overflow: hidden;
             background: #000;
         }
 
         #stats-container {
-            margin-top: 30px;
             text-align: center;
+            width: 100%;
         }
 
         .count-display {
-            font-size: 4rem;
+            font-size: 5rem;
             font-weight: 800;
             line-height: 1;
-            color: #007bff;
+            color: var(--valid-color); /* Changed to Green */
         }
 
         .label {
-            font-size: 0.9rem;
+            font-size: 1rem;
             letter-spacing: 2px;
             text-transform: uppercase;
-            opacity: 0.7;
+            opacity: 0.8;
             margin-top: 5px;
         }
 
-        /* Controls */
         .controls {
-            margin-top: 20px;
+            margin-top: 15px;
         }
 
         #reset-btn {
             background: transparent;
-            color: #555;
+            color: #444;
             border: 1px solid #333;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-        }
-
-        #reset-btn:hover {
-            color: var(--invalid-color);
-            border-color: var(--invalid-color);
+            font-size: 0.7rem;
         }
 
         /* Full Screen Overlays */
         .overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none; /* Hidden by default */
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -103,37 +103,32 @@
         .overlay-text {
             font-size: 6rem;
             font-weight: 900;
-            letter-spacing: -2px;
         }
 
-        .valid-overlay {
-            background-color: var(--valid-color);
-        }
-
+        .valid-overlay { background-color: var(--valid-color); }
         .invalid-overlay {
             background-color: var(--invalid-color);
             animation: flash-red 0.3s infinite;
         }
 
         @keyframes flash-red {
-            0% { background-color: var(--invalid-color); }
+            0%, 100% { background-color: var(--invalid-color); }
             50% { background-color: #800000; }
-            100% { background-color: var(--invalid-color); }
         }
 
-        /* Adjustments for the library's UI */
+        /* Button styling for library UI */
         #reader__dashboard_section_csr button {
-            background: #007bff !important;
+            background: #444 !important;
             color: white !important;
             border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 5px !important;
-            text-transform: uppercase;
-            font-weight: bold;
+            padding: 8px 15px !important;
+            border-radius: 4px !important;
         }
     </style>
 </head>
 <body>
+
+    <header>Asamblea Regional 2026</header>
 
     <div id="app-container">
         <div id="reader"></div>
@@ -143,7 +138,7 @@
             <div class="label">Total Scans</div>
             
             <div class="controls">
-                <button id="reset-btn">RESET COUNTER</button>
+                <button id="reset-btn">RESET</button>
             </div>
         </div>
     </div>
@@ -157,22 +152,16 @@
     </div>
 
     <script>
-        // ==========================================
-        // CONFIGURATION
-        // ==========================================
         const CONFIG = {
-            pin: "1234", // PIN to reset counter
-            validPhrases: ["AUTHORIZED", "OCHOA-2026", "Regional2026"], // Custom text strings
+            pin: "1234",
+            validPhrases: ["AUTHORIZED", "OCHOA-2026"],
             dateRange: {
                 start: new Date('2026-04-01T00:00:00'),
                 end: new Date('2026-04-04T23:59:59')
             },
-            feedbackDelay: 2500 // How long (ms) the result stays on screen
+            feedbackDelay: 2500
         };
 
-        // ==========================================
-        // STATE MANAGEMENT
-        // ==========================================
         let scanCount = parseInt(localStorage.getItem('qr_tally_v2')) || 0;
         document.getElementById('scan-count').innerText = scanCount;
 
@@ -182,33 +171,27 @@
             document.getElementById('scan-count').innerText = scanCount;
         }
 
-        // ==========================================
-        // SCANNER LOGIC
-        // ==========================================
         const html5QrCode = new Html5Qrcode("reader");
 
-        const onScanSuccess = (decodedText, decodedResult) => {
-            html5QrCode.pause(); // Stop scanning while showing result
+        const onScanSuccess = (decodedText) => {
+            html5QrCode.pause();
             processScan(decodedText);
         };
 
         function processScan(text) {
             let isValid = false;
-
-            // 1. Check Date Validity
             const scannedDate = new Date(text);
+            
             if (!isNaN(scannedDate.getTime())) {
                 if (scannedDate >= CONFIG.dateRange.start && scannedDate <= CONFIG.dateRange.end) {
                     isValid = true;
                 }
             }
 
-            // 2. Check Text Phrase Validity (if not already valid by date)
             if (!isValid && CONFIG.validPhrases.includes(text)) {
                 isValid = true;
             }
 
-            // 3. UI Response
             if (isValid) {
                 showOverlay('valid-screen');
                 updateCount();
@@ -216,49 +199,36 @@
                 showOverlay('invalid-screen');
             }
 
-            // 4. Resume Scanning
             setTimeout(() => {
                 hideOverlays();
                 html5QrCode.resume();
             }, CONFIG.feedbackDelay);
         }
 
-        function showOverlay(id) {
-            document.getElementById(id).style.display = 'flex';
-        }
-
+        function showOverlay(id) { document.getElementById(id).style.display = 'flex'; }
         function hideOverlays() {
             document.getElementById('valid-screen').style.display = 'none';
             document.getElementById('invalid-screen').style.display = 'none';
         }
 
-        // ==========================================
-        // INITIALIZATION
-        // ==========================================
         const qrConfig = { 
             fps: 15, 
-            qrbox: function(viewWidth, viewHeight) {
-                let minEdge = Math.min(viewWidth, viewHeight);
-                let boxSize = Math.floor(minEdge * 0.6);
-                return { width: boxSize, height: boxSize };
+            qrbox: (vw, vh) => {
+                let size = Math.min(vw, vh) * 0.7;
+                return { width: size, height: size };
             }
         };
 
         html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
 
-        // ==========================================
-        // RESET FUNCTIONALITY
-        // ==========================================
         document.getElementById('reset-btn').addEventListener('click', () => {
-            const entry = prompt("Enter PIN to reset tally:");
+            const entry = prompt("Enter PIN:");
             if (entry === CONFIG.pin) {
-                if (confirm("Clear all scan data?")) {
+                if (confirm("Reset counter?")) {
                     scanCount = 0;
                     localStorage.setItem('qr_tally_v2', 0);
                     document.getElementById('scan-count').innerText = 0;
                 }
-            } else if (entry !== null) {
-                alert("Incorrect PIN.");
             }
         });
     </script>
