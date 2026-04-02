@@ -1,322 +1,266 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Asamblea Regional 2026</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>QR Gatekeeper V2</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --valid-color: #28a745;
+            --invalid-color: #dc3545;
+            --text-color: #ffffff;
+        }
 
-  <script src="https://unpkg.com/html5-qrcode"></script>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        /* Responsive Layout */
+        #app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-    :root {
-      --bg-color: #0d1117;
-      --card-bg: rgba(22, 27, 34, 0.7);
-      --border-color: rgba(255, 255, 255, 0.1);
-      --text-color: #c9d1d9;
-      --text-muted: #8b949e;
-      --primary: #2ea043;
-      --primary-hover: #238636;
-      --invalid-red: #da3633;
-      --valid-green: #238636;
-    }
+        #reader {
+            width: 100%;
+            max-width: 450px;
+            border: 2px solid #333 !important;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+        }
 
-    body {
-      margin: 0;
-      background: var(--bg-color);
-      color: var(--text-color);
-      font-family: 'Inter', sans-serif;
-      text-align: center;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
+        #stats-container {
+            margin-top: 30px;
+            text-align: center;
+        }
 
-    .panel {
-      display: flex;
-      flex: 1;
-      justify-content: center;
-      align-items: center;
-    }
+        .count-display {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #007bff;
+        }
 
-    .glass-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--border-color);
-      border-radius: 20px;
-      padding: 2rem;
-      width: 90%;
-      max-width: 400px;
-    }
+        .label {
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
 
-    button {
-      cursor: pointer;
-      border-radius: 10px;
-      border: none;
-      font-family: inherit;
-      font-weight: 600;
-      transition: 0.2s;
-    }
+        /* Controls */
+        .controls {
+            margin-top: 20px;
+        }
 
-    .btn-primary {
-      padding: 15px 30px;
-      font-size: 1.2rem;
-      background: var(--primary);
-      color: white;
-      width: 100%;
-      margin-top: 10px;
-    }
+        #reset-btn {
+            background: transparent;
+            color: #555;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
 
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-2px);
-    }
+        #reset-btn:hover {
+            color: var(--invalid-color);
+            border-color: var(--invalid-color);
+        }
 
-    .btn-secondary {
-      padding: 8px 16px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-    }
+        /* Full Screen Overlays */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
 
-    #mainUI {
-      display: none;
-      flex-direction: column;
-      height: 100dvh;
-      width: 100%;
-      justify-content: space-between;
-      padding: 2dvh 0;
-    }
+        .overlay-text {
+            font-size: 6rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
 
-    .header {
-      display: flex;
-      justify-content: space-between;
-      width: 90%;
-      max-width: 500px;
-      margin: 0 auto;
-    }
+        .valid-overlay {
+            background-color: var(--valid-color);
+        }
 
-    #reader-container {
-      width: 100%;
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 10px;
-    }
+        .invalid-overlay {
+            background-color: var(--invalid-color);
+            animation: flash-red 0.3s infinite;
+        }
 
-    #reader {
-      width: 90%;
-      height: 100%;
-      max-width: 600px;
-      border-radius: 20px;
-      overflow: hidden;
-    }
+        @keyframes flash-red {
+            0% { background-color: var(--invalid-color); }
+            50% { background-color: #800000; }
+            100% { background-color: var(--invalid-color); }
+        }
 
-    #stats {
-      font-size: 1rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-
-    #count {
-      font-size: 4rem;
-      font-weight: 800;
-      color: var(--primary);
-    }
-
-    #overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      font-size: 10vw;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    .valid-bg { background: var(--valid-green); color: white; }
-    .flash-red { background: var(--invalid-red); color: white; animation: blink 0.15s infinite; }
-
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.3; }
-      100% { opacity: 1; }
-    }
-
-    /* Landscape optimization */
-    @media (orientation: landscape) {
-      #mainUI {
-        flex-direction: row;
-        align-items: center;
-        padding: 0 3%;
-      }
-      .header, #stats {
-        width: 25%;
-      }
-      #reader-container {
-        width: 50%;
-        height: 100%;
-      }
-      #reader {
-        height: 90%;
-      }
-    }
-  </style>
+        /* Adjustments for the library's UI */
+        #reader__dashboard_section_csr button {
+            background: #007bff !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 5px !important;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- Setup Screen -->
-  <div id="setup" class="panel">
-    <div class="glass-card">
-      <h1>Asamblea Regional 2026</h1>
-      <p>Scanner System Ready</p>
-      <button id="startBtn" class="btn-primary">Tap to Start Scanner</button>
-    </div>
-  </div>
-
-  <!-- Main Scanner UI -->
-  <div id="mainUI">
-    <div class="header">
-      <h2>Asamblea Regional 2026</h2>
-      <button id="resetScanBtn" class="btn-secondary">Reset</button>
+    <div id="app-container">
+        <div id="reader"></div>
+        
+        <div id="stats-container">
+            <div class="count-display" id="scan-count">0</div>
+            <div class="label">Total Scans</div>
+            
+            <div class="controls">
+                <button id="reset-btn">RESET COUNTER</button>
+            </div>
+        </div>
     </div>
 
-    <div id="reader-container">
-      <div id="reader"></div>
+    <div id="valid-screen" class="overlay valid-overlay">
+        <div class="overlay-text">VALID</div>
     </div>
 
-    <div id="stats">
-      Valid Admissions<br>
-      <span id="count">0</span>
+    <div id="invalid-screen" class="overlay invalid-overlay">
+        <div class="overlay-text">INVALID</div>
     </div>
-  </div>
 
-  <!-- Overlay -->
-  <div id="overlay">
-    <span id="overlayText">VALID</span>
-  </div>
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const CONFIG = {
+            pin: "1234", // PIN to reset counter
+            validPhrases: ["AUTHORIZED", "OCHOA-2026"], // Custom text strings
+            dateRange: {
+                start: new Date('2026-04-01T00:00:00'),
+                end: new Date('2026-04-04T23:59:59')
+            },
+            feedbackDelay: 2500 // How long (ms) the result stays on screen
+        };
 
-  <script>
-    // CONFIG
-    const config = {
-      VALID_PARAMETER: "AsambleaRegional2026",
-      RESET_PIN: "1234",
-      STORAGE_KEY: "lfah_valid_scans_2026"
-    };
+        // ==========================================
+        // STATE MANAGEMENT
+        // ==========================================
+        let scanCount = parseInt(localStorage.getItem('qr_tally_v2')) || 0;
+        document.getElementById('scan-count').innerText = scanCount;
 
-    let validScans = 0;
-    let isProcessing = false;
-    let audioCtx;
-
-    const setupDiv = document.getElementById("setup");
-    const mainUI = document.getElementById("mainUI");
-    const countDisplay = document.getElementById("count");
-    const overlay = document.getElementById("overlay");
-    const overlayText = document.getElementById("overlayText");
-
-    // ---- PERSISTENT COUNTER ----
-    function loadCounter() {
-      const stored = localStorage.getItem(config.STORAGE_KEY);
-      validScans = stored ? parseInt(stored, 10) : 0;
-      countDisplay.textContent = validScans;
-    }
-
-    function saveCounter() {
-      localStorage.setItem(config.STORAGE_KEY, validScans);
-    }
-
-    // ---- RESET WITH PIN ----
-    document.getElementById("resetScanBtn").addEventListener("click", () => {
-      const pin = prompt("Enter PIN to reset counter:");
-      if (pin === config.RESET_PIN) {
-        validScans = 0;
-        saveCounter();
-        countDisplay.textContent = validScans;
-        alert("Counter reset.");
-      } else if (pin !== null) {
-        alert("Incorrect PIN.");
-      }
-    });
-
-    // ---- SOUND ----
-    function playSound(freq) {
-      if (!audioCtx) return;
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.frequency.value = freq;
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-      osc.stop(audioCtx.currentTime + 0.4);
-    }
-
-    // ---- SCAN HANDLER ----
-    function onScanSuccess(decodedText) {
-      if (isProcessing) return;
-      isProcessing = true;
-
-      const isValid = decodedText.trim() === config.VALID_PARAMETER;
-
-      overlay.style.display = "flex";
-
-      if (isValid) {
-        validScans++;
-        saveCounter();
-        countDisplay.textContent = validScans;
-
-        overlay.className = "valid-bg";
-        overlayText.textContent = "VALID";
-        playSound(1200);
-      } else {
-        overlay.className = "flash-red";
-        overlayText.textContent = "INVALID";
-        playSound(200);
-      }
-
-      setTimeout(() => {
-        overlay.style.display = "none";
-        overlay.className = "";
-        isProcessing = false;
-      }, 2000);
-    }
-
-    // ---- START SCANNER ----
-    function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
-
-      const renderConfig = {
-        fps: 15,
-        qrbox: (vw, vh) => {
-          const size = Math.floor(Math.min(vw, vh) * 0.8);
-          return { width: size, height: size };
+        function updateCount() {
+            scanCount++;
+            localStorage.setItem('qr_tally_v2', scanCount);
+            document.getElementById('scan-count').innerText = scanCount;
         }
-      };
 
-      html5QrCode
-        .start({ facingMode: "environment" }, renderConfig, onScanSuccess)
-        .catch(err => {
-          alert("Camera Error: " + err);
-          console.error(err);
+        // ==========================================
+        // SCANNER LOGIC
+        // ==========================================
+        const html5QrCode = new Html5Qrcode("reader");
+
+        const onScanSuccess = (decodedText, decodedResult) => {
+            html5QrCode.pause(); // Stop scanning while showing result
+            processScan(decodedText);
+        };
+
+        function processScan(text) {
+            let isValid = false;
+
+            // 1. Check Date Validity
+            const scannedDate = new Date(text);
+            if (!isNaN(scannedDate.getTime())) {
+                if (scannedDate >= CONFIG.dateRange.start && scannedDate <= CONFIG.dateRange.end) {
+                    isValid = true;
+                }
+            }
+
+            // 2. Check Text Phrase Validity (if not already valid by date)
+            if (!isValid && CONFIG.validPhrases.includes(text)) {
+                isValid = true;
+            }
+
+            // 3. UI Response
+            if (isValid) {
+                showOverlay('valid-screen');
+                updateCount();
+            } else {
+                showOverlay('invalid-screen');
+            }
+
+            // 4. Resume Scanning
+            setTimeout(() => {
+                hideOverlays();
+                html5QrCode.resume();
+            }, CONFIG.feedbackDelay);
+        }
+
+        function showOverlay(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function hideOverlays() {
+            document.getElementById('valid-screen').style.display = 'none';
+            document.getElementById('invalid-screen').style.display = 'none';
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+        const qrConfig = { 
+            fps: 15, 
+            qrbox: function(viewWidth, viewHeight) {
+                let minEdge = Math.min(viewWidth, viewHeight);
+                let boxSize = Math.floor(minEdge * 0.6);
+                return { width: boxSize, height: boxSize };
+            }
+        };
+
+        html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
+
+        // ==========================================
+        // RESET FUNCTIONALITY
+        // ==========================================
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            const entry = prompt("Enter PIN to reset tally:");
+            if (entry === CONFIG.pin) {
+                if (confirm("Clear all scan data?")) {
+                    scanCount = 0;
+                    localStorage.setItem('qr_tally_v2', 0);
+                    document.getElementById('scan-count').innerText = 0;
+                }
+            } else if (entry !== null) {
+                alert("Incorrect PIN.");
+            }
         });
-    }
-
-    // ---- START BUTTON ----
-    document.getElementById("startBtn").addEventListener("click", () => {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      setupDiv.style.display = "none";
-      mainUI.style.display = "flex";
-      loadCounter();
-      startScanner();
-    });
-
-    loadCounter();
-  </script>
+    </script>
 </body>
 </html>
