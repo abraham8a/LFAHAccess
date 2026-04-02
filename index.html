@@ -103,16 +103,25 @@
             animation: rainbow-flash 3s linear infinite;
         }
 
-        @keyframes rainbow-flash {
-            0%   { background-color: hsl(0, 100%, 50%); }
-            17%  { background-color: hsl(60, 100%, 50%); }
-            33%  { background-color: hsl(120, 100%, 50%); }
-            50%  { background-color: hsl(180, 100%, 50%); }
-            67%  { background-color: hsl(240, 100%, 50%); }
-            83%  { background-color: hsl(300, 100%, 50%); }
-            100% { background-color: hsl(360, 100%, 50%); }
-        }
-
+        @keyframes police-flash {
+    /* Red Phase */
+    0%, 19% { background-color: #ff0000; } 
+    
+    /* Quick White Strobe/Gap */
+    20%, 24% { background-color: #ffffff; } 
+    
+    /* Blue Phase */
+    25%, 44% { background-color: #0000ff; }
+    
+    /* Quick White Strobe/Gap */
+    45%, 49% { background-color: #ffffff; }
+    
+    /* Repeat Red */
+    50%, 69% { background-color: #ff0000; }
+    
+    /* Repeat Blue */
+    70%, 100% { background-color: #0000ff; }
+}
         #reader__dashboard_section_csr button {
             background: #444 !important;
             color: white !important;
