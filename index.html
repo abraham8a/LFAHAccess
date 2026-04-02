@@ -338,7 +338,7 @@ const COUNT_API_BASE = `https://api.counterapi.dev/v1/${config.GLOBAL_NAMESPACE}
 async function fetchGlobalState() {
     try {
         // 1. Check current session ID
-        let sessionRes = await fetch(`${COUNT_API_BASE}/session_id`);
+        let sessionRes = await fetch(`${COUNT_API_BASE}/session_id`, { cache: "no-store" });
         if (!sessionRes.ok) throw new Error("No session");
         let sessionData = await sessionRes.json();
         currentSessionId = sessionData.count || 0;
@@ -348,7 +348,7 @@ async function fetchGlobalState() {
 
     try {
         // 2. Fetch scans for this active session
-        let scansRes = await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}`);
+        let scansRes = await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}`, { cache: "no-store" });
         if (scansRes.ok) {
             let scansData = await scansRes.json();
             validScans = scansData.count || 0;
@@ -385,7 +385,7 @@ document.getElementById('resetScanBtn').addEventListener('click', async function
             validScans = 0;
             countDisplay.innerText = "...";
             // Increment the session ID globally to "reset" the count to a fresh 0 state
-            await fetch(`${COUNT_API_BASE}/session_id/up`);
+            await fetch(`${COUNT_API_BASE}/session_id/up`, { cache: "no-store" });
             await fetchGlobalState();
             alert('Global counter reset successfully active across all devices!');
         } catch(e) {
@@ -472,7 +472,7 @@ async function triggerUI(isValid) {
         
         // Push globally behind the scenes
         try {
-            await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}/up`);
+            await fetch(`${COUNT_API_BASE}/scans_session_${currentSessionId}/up`, { cache: "no-store" });
         } catch(e) { console.error('Failed to sync scan', e); }
     } else {
         overlay.className = 'flash-red';
