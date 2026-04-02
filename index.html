@@ -29,6 +29,9 @@ body {
     text-align: center;
     overflow: hidden;
     touch-action: manipulation;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
 }
 
 h1, h2 {
@@ -51,7 +54,8 @@ h1, h2 {
 
 .panel {
     display: flex;
-    height: 100vh;
+    flex: 1;
+    height: 100%;
     justify-content: center;
     align-items: center;
 }
@@ -131,35 +135,58 @@ button {
 }
 
 /* Scanner UI */
+#mainUI {
+    display: none; /* Toggled to flex */
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 100dvh;
+    padding: 3dvh 0;
+    box-sizing: border-box;
+}
+
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 5%;
+    padding: 0 5%;
+    width: 90%;
     max-width: 500px;
-    margin: 0 auto;
+    flex-shrink: 0;
 }
 
-.header h2 { margin: 0; }
+.header h2 { margin: 0; font-size: 1.5rem; }
 
 #reader-container {
     width: 90%;
     max-width: 500px;
-    margin: 0 auto;
+    flex: 1; /* Stretches dynamically */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 15px 0;
     border-radius: 20px;
     padding: 5px;
     background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(0,0,0,0.5));
     border: 1px solid var(--border-color);
+    overflow: hidden;
 }
 
 #reader {
+    width: 100%;
     border-radius: 15px;
     overflow: hidden;
+    position: relative;
+}
+
+#reader video {
+    object-fit: cover !important; /* Maximizes frame within the container natively */
 }
 
 /* Stats */
 #stats {
-    margin-top: 30px;
+    flex-shrink: 0;
     font-size: 1rem;
     letter-spacing: 1px;
     color: var(--text-muted);
@@ -168,11 +195,11 @@ button {
 }
 
 #count {
-    font-size: 4.5rem;
+    font-size: 4rem;
     font-weight: 800;
     color: var(--primary);
     display: block;
-    margin-top: 5px;
+    margin-top: 2px;
     text-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
 }
 
@@ -185,7 +212,7 @@ button {
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    font-size: 12vw;
+    font-size: 10vw;
     font-weight: 900;
     text-transform: uppercase;
 }
@@ -211,6 +238,34 @@ button {
     0% { background: var(--invalid-red); }
     50% { background: #000000; }
     100% { background: var(--invalid-red); }
+}
+
+/* Responsiveness for Rotating Device / Landscape */
+@media (orientation: landscape) and (max-height: 600px) {
+    #mainUI {
+        flex-direction: row;
+        padding: 5% 5%;
+    }
+    .header {
+        flex-direction: column;
+        width: 30%;
+        max-width: none;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 15px;
+    }
+    #reader-container {
+        width: 40%;
+        margin: 0;
+        height: 100%;
+    }
+    #stats {
+        width: 30%;
+        text-align: right;
+    }
+    #count {
+        font-size: 3rem;
+    }
 }
     </style>
 </head>
@@ -314,7 +369,7 @@ setInterval(fetchGlobalState, 3000);
 document.getElementById('startBtn').addEventListener('click', async function() {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     setupDiv.style.display = 'none';
-    mainUIDiv.style.display = 'block';
+    mainUIDiv.style.display = 'flex'; // Use flex for the new layout overrides
     
     // Fetch initial state immediately
     countDisplay.innerText = "...";
@@ -435,10 +490,19 @@ async function triggerUI(isValid) {
 
 function startScanner() {
     const html5QrCode = new Html5Qrcode("reader");
+    
+    // Dynamic QRBox size depending on viewport
     const renderConfig = { 
         fps: 15, 
-        qrbox: { width: 280, height: 280 },
-        aspectRatio: 1.0
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+            let minEdgeSizeThreshold = Math.min(viewfinderWidth, viewfinderHeight);
+            // 70% of the smallest viewport dimension
+            let qrboxSize = Math.floor(minEdgeSizeThreshold * 0.7);
+            return {
+                width: qrboxSize,
+                height: qrboxSize
+            };
+        }
     };
 
     html5QrCode.start(
