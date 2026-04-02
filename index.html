@@ -64,7 +64,7 @@
             font-weight: 800;
             line-height: 1;
             color: var(--valid-color);
-            cursor: pointer; /* Indicates it is clickable */
+            cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
 
@@ -100,28 +100,19 @@
         .valid-overlay { background-color: var(--valid-color); }
         
         .invalid-overlay {
-            animation: rainbow-flash 3s linear infinite;
+            /* Applied your police-flash animation here */
+            animation: police-flash 0.2s linear infinite;
         }
 
         @keyframes police-flash {
-    /* Red Phase */
-    0%, 19% { background-color: #ff0000; } 
-    
-    /* Quick White Strobe/Gap */
-    20%, 24% { background-color: #ffffff; } 
-    
-    /* Blue Phase */
-    25%, 44% { background-color: #0000ff; }
-    
-    /* Quick White Strobe/Gap */
-    45%, 49% { background-color: #ffffff; }
-    
-    /* Repeat Red */
-    50%, 69% { background-color: #ff0000; }
-    
-    /* Repeat Blue */
-    70%, 100% { background-color: #0000ff; }
-}
+            0%, 19% { background-color: #ff0000; } 
+            20%, 24% { background-color: #ffffff; } 
+            25%, 44% { background-color: #0000ff; }
+            45%, 49% { background-color: #ffffff; }
+            50%, 69% { background-color: #ff0000; }
+            70%, 100% { background-color: #0000ff; }
+        }
+
         #reader__dashboard_section_csr button {
             background: #444 !important;
             color: white !important;
@@ -162,7 +153,7 @@
                 start: new Date('2026-04-01T00:00:00'),
                 end: new Date('2026-04-04T23:59:59')
             },
-            feedbackDelay: 2500
+            feedbackDelay: 3000 // Set to 3 seconds as requested
         };
 
         let scanCount = parseInt(localStorage.getItem('qr_tally_v2')) || 0;
@@ -225,7 +216,6 @@
 
         html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
 
-        // Reset functionality triggered by tapping the tally number
         document.getElementById('scan-count').addEventListener('click', () => {
             const entry = prompt("Enter PIN to reset tally:");
             if (entry === CONFIG.pin) {
