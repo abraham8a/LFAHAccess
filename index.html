@@ -88,7 +88,6 @@
             font-size: 0.7rem;
         }
 
-        /* Full Screen Overlays */
         .overlay {
             position: fixed;
             top: 0; left: 0;
@@ -113,7 +112,6 @@
         .valid-overlay { background-color: var(--valid-color); }
         
         .invalid-overlay {
-            /* Cycles through all colors in 3 seconds */
             animation: rainbow-flash 3s linear infinite;
         }
 
@@ -162,6 +160,9 @@
     </div>
 
     <script>
+        // Ding sound effect embedded as Base64
+        const dingSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YV9vT18AZEp3Z3iHj5mXmZ+dn52fmZ+YmZmWlpSOf3Z0cnJyc3R2eXp9f3+AgYKDhIWGh4eIiYqLi4yNjY6Ojo6Pjo+Pjo6Pjo6Ojo6NjYyLi4mIiIaGhYSDg4KBgX99fHt6eXh3dnRycXFwcG9ubWxrZGVjYWFhX15cXFxbWllYV1ZUVFNSUFBPT05NTEtKSURCQkJCQUFCQUFBQUFBP0FBQUE=");
+
         const CONFIG = {
             pin: "1234",
             validPhrases: ["AUTHORIZED", "OCHOA-2026"],
@@ -203,6 +204,7 @@
             }
 
             if (isValid) {
+                dingSound.play(); // Play chime on valid scan
                 showOverlay('valid-screen');
                 updateCount();
             } else {
