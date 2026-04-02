@@ -2,24 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Premium QR Validator</title>
+  <title>Premium QR Validator – Asamblea Regional 2026</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- QR Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <!-- Fonts & Styles -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
     :root {
       --bg-color: #0d1117;
       --card-bg: rgba(22, 27, 34, 0.7);
       --border-color: rgba(255, 255, 255, 0.1);
       --text-color: #c9d1d9;
       --text-muted: #8b949e;
+
       --primary: #2ea043;
       --primary-hover: #238636;
       --danger: #da3633;
@@ -75,6 +74,36 @@
       margin-bottom: 2rem;
     }
 
+    .input-group {
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px 15px;
+      color: #ffffff;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(46, 160, 67, 0.2);
+    }
+
     button {
       cursor: pointer;
       border-radius: 10px;
@@ -110,7 +139,7 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Main UI */
+    /* Scanner UI */
     #mainUI {
       display: none;
       flex-direction: column;
@@ -180,13 +209,11 @@
       text-shadow: 0 0 20px rgba(46, 160, 67, 0.4);
     }
 
-    /* Overlay */
+    /* Full Screen Overlay */
     #overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: none;
       justify-content: center;
       align-items: center;
@@ -219,6 +246,7 @@
       100% { background: var(--invalid-red); }
     }
 
+    /* Landscape layout */
     @media (orientation: landscape) and (max-height: 600px) {
       #mainUI {
         flex-direction: row;
@@ -275,7 +303,7 @@
     </div>
   </div>
 
-  <!-- Fullscreen Overlay -->
+  <!-- Overlay -->
   <div id="overlay">
     <span id="overlayText">VALID</span>
   </div>
@@ -283,10 +311,10 @@
   <script>
     // CONFIGURATION
     const APP_CONFIG = {
-      VALID_PARAMETER: "AsambleaRegional2026", // exact text to be valid (optional)
-      INVALID_PARAMETER: "",                   // exact text to be invalid (optional)
-      RESET_PIN: "1234",                       // PIN to reset global counter
-      GLOBAL_NAMESPACE: "lfah-access-global-event-2026" // global shared key
+      VALID_PARAMETER: "AsambleaRegional2026",
+      INVALID_PARAMETER: "",
+      RESET_PIN: "1234",
+      GLOBAL_NAMESPACE: "lfah-access-global-event-2026"
     };
 
     // GLOBAL STATE
@@ -306,34 +334,27 @@
     // CountAPI base
     const COUNT_API_BASE = 'https://api.countapi.xyz';
 
-    // Fetch global state (session + scans)
+    // Fetch global state
     async function fetchGlobalState() {
-      // Ensure session_id exists
+      // Session ID
       try {
-        let sessionRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/session_id`);
-        if (!sessionRes.ok) {
-          // Initialize if missing
-          await fetch(`${COUNT_API_BASE}/create?namespace=${config.GLOBAL_NAMESPACE}&key=session_id&value=0`);
-          sessionRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/session_id`);
-        }
+        const sessionRes = await fetch(
+          `${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/session_id`
+        );
         const sessionData = await sessionRes.json();
         currentSessionId = sessionData.value || 0;
       } catch (e) {
-        console.error("Session fetch error:", e);
         currentSessionId = 0;
       }
 
-      // Ensure scans counter exists for this session
+      // Scans for this session
       try {
-        let scansRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
-        if (!scansRes.ok) {
-          await fetch(`${COUNT_API_BASE}/create?namespace=${config.GLOBAL_NAMESPACE}&key=scans_session_${currentSessionId}&value=0`);
-          scansRes = await fetch(`${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
-        }
+        const scansRes = await fetch(
+          `${COUNT_API_BASE}/get/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`
+        );
         const scansData = await scansRes.json();
         validScans = scansData.value || 0;
       } catch (e) {
-        console.error("Scans fetch error:", e);
         validScans = 0;
       }
 
@@ -348,7 +369,8 @@
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       setupDiv.style.display = 'none';
       mainUIDiv.style.display = 'flex';
-      countDisplay.innerText = "...";
+
+      countDisplay.innerText = '...';
       await fetchGlobalState();
       startScanner();
     });
@@ -362,17 +384,18 @@
       }
 
       try {
-        // Increment session ID = new logical session, fresh counter
-        await fetch(`${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/session_id`);
+        // Increment session ID = new logical session, counter resets
+        await fetch(
+          `${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/session_id`
+        );
         await fetchGlobalState();
         alert('Global counter reset successfully!');
       } catch (e) {
-        console.error("Reset error:", e);
         alert('Error connecting to sync server.');
       }
     });
 
-    // Sound helper
+    // Sound
     function playSound(freq, waveType) {
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
@@ -386,7 +409,7 @@
       osc.stop(audioCtx.currentTime + 0.5);
     }
 
-    // Date logic fallback (YYYY-MM-DD or start|end)
+    // Date logic (optional fallback)
     function checkDateLogic(decodedText) {
       const today = new Date().toISOString().split('T')[0];
       const parts = decodedText.trim().split('|');
@@ -408,12 +431,15 @@
       let isValid = false;
       let explicit = false;
 
-      if (config.VALID_PARAMETER && decodedText.trim() === config.VALID_PARAMETER) {
+      if (config.VALID_PARAMETER &&
+          decodedText.trim() === config.VALID_PARAMETER) {
         isValid = true;
         explicit = true;
       }
 
-      if (!isValid && config.INVALID_PARAMETER && decodedText.trim() === config.INVALID_PARAMETER) {
+      if (!isValid &&
+          config.INVALID_PARAMETER &&
+          decodedText.trim() === config.INVALID_PARAMETER) {
         isValid = false;
         explicit = true;
       }
@@ -437,9 +463,11 @@
         playSound(1200, 'sine');
 
         try {
-          await fetch(`${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`);
+          await fetch(
+            `${COUNT_API_BASE}/hit/${config.GLOBAL_NAMESPACE}/scans_session_${currentSessionId}`
+          );
         } catch (e) {
-          console.error("Sync failed", e);
+          console.error('Sync failed', e);
         }
       } else {
         overlay.className = 'flash-red';
@@ -456,7 +484,7 @@
 
     // Scanner
     function startScanner() {
-      const html5QrCode = new Html5Qrcode("reader");
+      const html5QrCode = new Html5Qrcode('reader');
 
       const renderConfig = {
         fps: 15,
@@ -467,10 +495,13 @@
       };
 
       html5QrCode
-        .start({ facingMode: "environment" }, renderConfig, onScanSuccess)
+        .start(
+          { facingMode: 'environment' },
+          renderConfig,
+          onScanSuccess
+        )
         .catch(err => {
-          alert("Camera Error: " + err);
-          console.error(err);
+          alert('Camera Error: ' + err);
         });
     }
   </script>
