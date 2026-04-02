@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium QR Validator</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="config.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <div id="setup" class="panel">
+        <div class="glass-card">
+            <h1>Asamblea Regional 2026</h1>
+            <p>Scanner System Ready</p>
+            <button id="startBtn" class="btn-primary">Tap to Start Scanner</button>
+        </div>
+    </div>
+
+    <div id="mainUI" style="display: none;">
+        <div class="header">
+            <h2>Asamblea Regional 2026</h2>
+            <button id="resetScanBtn" class="btn-secondary">Reset</button>
+        </div>
+        
+        <div id="reader-container">
+            <div id="reader"></div>
+        </div>
+
+        <div id="stats">
+            Valid Admissions
+            <span id="count">0</span>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <span id="overlayText">VALID</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
