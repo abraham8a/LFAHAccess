@@ -1,233 +1,180 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Asamblea Regional 2026 - Felices Para Siempre</title>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --valid-color: #28a745;
-            --invalid-color: #dc3545;
-            --text-color: #ffffff;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            text-align: center;
-            padding: 15px 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-            background: #1e1e1e;
-            border-bottom: 1px solid #333;
-        }
-
-        #app-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-evenly;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-
-        #reader {
-            width: 100%;
-            max-width: 400px;
-            border: 2px solid #444 !important;
-            border-radius: 12px;
-            overflow: hidden;
-            background: #000;
-        }
-
-        #stats-container {
-            text-align: center;
-            width: 100%;
-        }
-
-        .count-display {
-            font-size: 6rem;
-            font-weight: 800;
-            line-height: 1;
-            color: var(--valid-color);
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .label {
-            font-size: 1rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            margin-top: 5px;
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .overlay-text {
-            font-size: 18vw; 
-            font-weight: 900;
-            text-align: center;
-            width: 100%;
-            word-wrap: break-word;
-        }
-
-        .valid-overlay { background-color: var(--valid-color); }
-        
-        .invalid-overlay {
-            /* Applied your police-flash animation here */
-            animation: police-flash 0.2s linear infinite;
-        }
-
-        @keyframes police-flash {
-            0%, 19% { background-color: #ff0000; } 
-            20%, 24% { background-color: #ffffff; } 
-            25%, 44% { background-color: #0000ff; }
-            45%, 49% { background-color: #ffffff; }
-            50%, 69% { background-color: #ff0000; }
-            70%, 100% { background-color: #0000ff; }
-        }
-
-        #reader__dashboard_section_csr button {
-            background: #444 !important;
-            color: white !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 5px !important;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#087b8b">
+  <title>Escáner de acceso | Asamblea de circuito</title>
+  <style>
+    :root { font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color-scheme:light; --ink:#123641; --teal:#087b8b; }
+    * { box-sizing:border-box }
+    html,body { margin:0; min-height:100%; }
+    body { background:#edf8fa; color:var(--ink); }
+    header { background:#fff; border-top:7px solid #37aab6; border-bottom:1px solid #c7e7eb; text-align:center; padding:17px 12px; }
+    header small { font-weight:750; text-transform:uppercase; letter-spacing:.08em; color:#367784; }
+    header h1 { font-size:clamp(1.3rem,5vw,1.85rem); line-height:1.25; margin:7px auto; max-width:560px; }
+    header p { margin:0; font-size:.92rem; color:#436875; }
+    main { margin:16px auto 32px; padding:0 12px; max-width:510px; }
+    .panel { background:#fff; padding:18px; border:1px solid #c9e4e8; border-radius:17px; box-shadow:0 8px 25px #1249530d; }
+    #reader { width:100%; min-height:220px; border-radius:12px; background:#162e36; overflow:hidden; }
+    #status { margin:14px 0; font-size:.95rem; min-height:1.4em; }
+    #status.error { color:#b4232a; font-weight:650; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    button { appearance:none; background:var(--teal); color:white; border:0; border-radius:10px; min-height:46px; padding:10px 17px; font-size:1rem; font-weight:700; cursor:pointer; }
+    button.secondary { background:#e4f3f5; color:#0a5868; border:1px solid #b2dde3; }
+    button:disabled { cursor:default; opacity:.55; }
+    button:focus-visible { outline:3px solid #29afc2; outline-offset:3px; }
+    .count { text-align:center; margin-top:18px; padding-top:15px; border-top:1px solid #d9eaf0; }
+    .count span { display:block; color:#526a75; letter-spacing:.08em; text-transform:uppercase; font-size:.76rem; font-weight:750; }
+    #countNumber { display:block; font-size:clamp(3rem,16vw,5.5rem); line-height:1.05; font-weight:850; font-variant-numeric:tabular-nums; color:var(--teal); margin:6px 0; }
+    .hint { color:#55717a; font-size:.82rem; text-align:center; line-height:1.45; }
+    .feedback { display:none; position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; z-index:99999; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:25px; color:#fff; }
+    .feedback.visible { display:flex; }
+    .feedback strong { font-size:clamp(2.9rem,15vw,6.2rem); line-height:1.1; font-weight:900; }
+    .feedback p { font-size:clamp(1.1rem,5vw,1.6rem); font-weight:600; margin:20px auto; max-width:550px; }
+    #validFeedback { background:#128451; }
+    #invalidFeedback { background:#d71920; }
+    #invalidFeedback.visible { animation:flash-red .8s ease-in-out infinite; }
+    @keyframes flash-red { 0%,100% { background-color:#d71920; } 50% { background-color:#ff4747; } }
+    @media (prefers-reduced-motion:reduce) { #invalidFeedback.visible {animation:none;} }
+    [hidden] {display:none!important}
+  </style>
 </head>
 <body>
+  <header>
+    <small>Asamblea de circuito · 2026–2027</small>
+    <h1>“El que confía en Jehová es feliz”</h1>
+    <p>PROVERBIOS 16:20 · 15 DE NOVIEMBRE DE 2026</p>
+  </header>
 
-    <header>Asamblea Regional 2026</header>
+  <main>
+    <section class="panel" aria-label="Lector de códigos QR">
+      <div id="reader"></div>
+      <p id="status" role="status" aria-live="polite">Presione “Iniciar cámara” para escanear.</p>
+      <div class="actions">
+        <button id="startButton" type="button">Iniciar cámara</button>
+        <button id="stopButton" type="button" class="secondary" disabled>Detener</button>
+      </div>
+      <div class="count">
+        <span>Escaneos válidos en este dispositivo</span>
+        <strong id="countNumber">0</strong>
+        <button type="button" class="secondary" id="resetButton">Reiniciar conteo local</button>
+      </div>
+    </section>
+    <p class="hint">Valida el QR en este teléfono, sin servidor ni conexión a Cloudflare. El conteo no se comparte entre dispositivos. La cámara debe abrirse desde HTTPS (por ejemplo, GitHub Pages).</p>
+  </main>
 
-    <div id="app-container">
-        <div id="reader"></div>
-        
-        <div id="stats-container">
-            <div class="count-display" id="scan-count">0</div>
-            <div class="label">Acceso Total</div>
-        </div>
-    </div>
+  <div id="validFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso válido">
+    <strong>VÁLIDO ✅</strong><p>Acceso autorizado</p>
+  </div>
+  <div id="invalidFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso denegado">
+    <strong>NEGADO ❌</strong><p id="invalidReason">Código QR no autorizado</p>
+  </div>
 
-    <div id="valid-screen" class="overlay valid-overlay">
-        <div class="overlay-text">VALIDO ✅</div>
-    </div>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    'use strict';
+    // VALIDATION_START — used verbatim by tests/check.mjs.
+    // Exact contents of the USER'S ORIGINAL QR: two spaces before the date.
+    const EXACT_QR_TEXT = 'El que confia en Jehova es feliz  15 de noviembre del 2026';
+    const EVENT_DATE = '2026-11-15';
+    const EVENT_TIME_ZONE = 'America/Chicago';
 
-    <div id="invalid-screen" class="overlay invalid-overlay">
-        <div class="overlay-text">NEGADO ❌</div>
-    </div>
+    function localEventDate(now = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: EVENT_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(now);
+      const get = type => parts.find(p => p.type === type)?.value;
+      return `${get('year')}-${get('month')}-${get('day')}`;
+    }
 
-    <script>
-        const dingSound = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YV9vT18AZEp3Z3iHj5mXmZ+dn52fmZ+YmZmWlpSOf3Z0cnJyc3R2eXp9f3+AgYKDhIWGh4eIiYqLi4yNjY6Ojo6Pjo+Pjo6Pjo6Ojo6NjYyLi4mIiIaGhYSDg4KBgX99fHt6eXh3dnRycXFwcG9ubWxrZGVjYWFhX15cXFxbWllYV1ZUVFNSUFBPT05NTEtKSURCQkJCQUFCQUFBQUFBP0FBQUE=");
+    function validateQR(decodedText, now = new Date()) {
+      if (decodedText !== EXACT_QR_TEXT) return { valid:false, reason:'Código QR no autorizado' };
+      if (localEventDate(now) !== EVENT_DATE) return { valid:false, reason:'Fuera de la fecha autorizada' };
+      return { valid:true, reason:'' };
+    }
+    // VALIDATION_END
 
-        const CONFIG = {
-            pin: "1234",
-            validPhrases: ["AUTHORIZED", "AR-FPS-26.06.19-21"],
-            dateRange: {
-                start: new Date('2026-04-01T00:00:00'),
-                end: new Date('2026-04-04T23:59:59')
-            },
-            feedbackDelay: 3000 // Set to 3 seconds as requested
-        };
+    const $ = id => document.getElementById(id);
+    const COUNT_KEY = 'lfah-valid-local-2026-11-15';
+    let count = Number(localStorage.getItem(COUNT_KEY)) || 0;
+    let scanner = null;
+    let busy = false;
+    let timer = null;
+    $('countNumber').textContent = count.toLocaleString('es');
 
-        let scanCount = parseInt(localStorage.getItem('qr_tally_v2')) || 0;
-        document.getElementById('scan-count').innerText = scanCount;
-
-        function updateCount() {
-            scanCount++;
-            localStorage.setItem('qr_tally_v2', scanCount);
-            document.getElementById('scan-count').innerText = scanCount;
-        }
-
-        const html5QrCode = new Html5Qrcode("reader");
-
-        const onScanSuccess = (decodedText) => {
-            html5QrCode.pause();
-            processScan(decodedText);
-        };
-
-        function processScan(text) {
-            let isValid = false;
-            const scannedDate = new Date(text);
-            
-            if (!isNaN(scannedDate.getTime())) {
-                if (scannedDate >= CONFIG.dateRange.start && scannedDate <= CONFIG.dateRange.end) {
-                    isValid = true;
-                }
-            }
-
-            if (!isValid && CONFIG.validPhrases.includes(text)) {
-                isValid = true;
-            }
-
-            if (isValid) {
-                try { dingSound.play(); } catch(e) {}
-                showOverlay('valid-screen');
-                updateCount();
-            } else {
-                showOverlay('invalid-screen');
-            }
-
-            setTimeout(() => {
-                hideOverlays();
-                html5QrCode.resume();
-            }, CONFIG.feedbackDelay);
-        }
-
-        function showOverlay(id) { document.getElementById(id).style.display = 'flex'; }
-        function hideOverlays() {
-            document.getElementById('valid-screen').style.display = 'none';
-            document.getElementById('invalid-screen').style.display = 'none';
-        }
-
-        const qrConfig = { 
-            fps: 15, 
-            qrbox: (vw, vh) => {
-                let size = Math.min(vw, vh) * 0.7;
-                return { width: size, height: size };
-            }
-        };
-
-        html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess);
-
-        document.getElementById('scan-count').addEventListener('click', () => {
-            const entry = prompt("Enter PIN to reset tally:");
-            if (entry === CONFIG.pin) {
-                if (confirm("Reset counter to zero?")) {
-                    scanCount = 0;
-                    localStorage.setItem('qr_tally_v2', 0);
-                    document.getElementById('scan-count').innerText = 0;
-                }
-            } else if (entry !== null) {
-                alert("Incorrect PIN.");
-            }
-        });
-    </script>
+    function setStatus(message, error = false) {
+      $('status').textContent = message;
+      $('status').classList.toggle('error', error);
+    }
+    function showFeedback(valid, reason) {
+      $('validFeedback').classList.toggle('visible', valid);
+      $('invalidFeedback').classList.toggle('visible', !valid);
+      if (!valid) $('invalidReason').textContent = reason;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        $('validFeedback').classList.remove('visible');
+        $('invalidFeedback').classList.remove('visible');
+        busy = false;
+        try { scanner?.resume(); } catch { /* camera may have been stopped */ }
+      }, 3000);
+    }
+    function onQRScanned(decodedText) {
+      if (busy) return;
+      busy = true;
+      try { scanner?.pause(true); } catch { /* busy flag still prevents duplicates */ }
+      const result = validateQR(decodedText);
+      if (result.valid) {
+        count += 1;
+        localStorage.setItem(COUNT_KEY, String(count));
+        $('countNumber').textContent = count.toLocaleString('es');
+      }
+      showFeedback(result.valid, result.reason);
+    }
+    async function startCamera() {
+      if (scanner) return;
+      if (!window.Html5Qrcode) {
+        setStatus('No se pudo cargar el lector. Conecte a internet para cargar la biblioteca de cámara.', true);
+        return;
+      }
+      $('startButton').disabled = true;
+      try {
+        scanner = new Html5Qrcode('reader');
+        await scanner.start({facingMode:'environment'}, {
+          fps:12,
+          qrbox:(w,h) => { const s = Math.max(120,Math.min(330,Math.floor(Math.min(w,h)*.78))); return {width:s,height:s}; }
+        }, onQRScanned);
+        $('stopButton').disabled = false;
+        setStatus('Cámara activa. Coloque el QR dentro del recuadro.');
+      } catch {
+        scanner = null;
+        $('startButton').disabled = false;
+        setStatus('No se pudo activar la cámara. Conceda permiso y use una página HTTPS.', true);
+      }
+    }
+    async function stopCamera() {
+      $('stopButton').disabled = true;
+      window.clearTimeout(timer);
+      $('validFeedback').classList.remove('visible');
+      $('invalidFeedback').classList.remove('visible');
+      busy = false;
+      if (scanner) {
+        try { await scanner.stop(); } catch { /* if not started */ }
+        try { scanner.clear(); } catch { /* if not initialized */ }
+        scanner = null;
+      }
+      $('startButton').disabled = false;
+      setStatus('Cámara detenida.');
+    }
+    $('startButton').addEventListener('click', startCamera);
+    $('stopButton').addEventListener('click', stopCamera);
+    $('resetButton').addEventListener('click', () => {
+      if (window.confirm('¿Reiniciar el conteo de este dispositivo a cero?')) {
+        count = 0;
+        localStorage.setItem(COUNT_KEY, '0');
+        $('countNumber').textContent = '0';
+      }
+    });
+  </script>
 </body>
 </html>
