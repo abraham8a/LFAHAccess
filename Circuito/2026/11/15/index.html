@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#087b8b">
+  <title>Escáner de acceso | Asamblea de circuito</title>
+  <style>
+    :root { font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color-scheme:light;
+      --ink:#13333d; --accent:#087b8b; --accent-light:#8ad5db;
+      --muted:#07606c; --bg:#edf8fa; --border:#c7e5e9; --soft:#e7f5f6; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; min-height:100%; }
+    body { background:var(--bg); color:var(--ink); }
+    .event-header { text-align:center; background:#fff; border-top:5px solid var(--accent);
+      border-bottom:1px solid var(--border); padding:0 0 9px; }
+    .eyebrow { font-size:clamp(.69rem,2.6vw,.82rem); text-transform:uppercase; letter-spacing:.075em;
+      font-weight:800; color:var(--muted); margin:8px 10px 0; }
+    .event-art { display:block; width:100%; height:clamp(140px,25vw,220px);
+      object-fit:cover; object-position:center 47%; margin:0; border-radius:0; }
+    .day-label { font-size:clamp(2.1rem,8.5vw,3rem); font-weight:900;
+      letter-spacing:.035em; line-height:1.07; color:var(--accent); margin:4px 0 2px; }
+    .date-label { font-size:clamp(.97rem,4vw,1.1rem); font-weight:750;
+      letter-spacing:.015em; color:#405663; margin:0; }
+    .stage-label { display:inline-block; background:var(--accent); color:white;
+      padding:7px 16px; border-radius:999px; font-size:.82rem;
+      font-weight:850; letter-spacing:.035em; margin:6px auto 0; }
+    main { margin:8px auto 22px; padding:0 12px; max-width:510px; }
+    .panel { background:#fff; padding:14px; border:1px solid var(--border); border-radius:16px;
+      box-shadow:0 8px 24px rgba(18,51,61,.07); }
+    #reader { width:100%; min-height:225px; border-radius:12px; background:#162e36; overflow:hidden; }
+    #status { margin:12px 0; font-size:.94rem; min-height:1.3em; }
+    #status.error { color:#b4232a; font-weight:650; }
+    .actions { display:flex; gap:9px; flex-wrap:wrap; }
+    button { appearance:none; background:var(--accent); color:white; border:0; border-radius:10px;
+      min-height:45px; padding:10px 16px; font-size:1rem; font-weight:750; cursor:pointer; }
+    button.secondary { background:var(--soft); color:var(--muted); border:1px solid var(--border); }
+    button:disabled { cursor:default; opacity:.52; }
+    button:focus-visible { outline:3px solid var(--accent-light); outline-offset:3px; }
+    .count { text-align:center; margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+    .count span { display:block; font-size:.75rem; line-height:1.35; text-transform:uppercase;
+      font-weight:800; letter-spacing:.07em; color:#526b78; }
+    #countNumber { display:block; font-size:clamp(3.2rem,17vw,5rem); font-weight:900; line-height:1.06;
+      margin:5px 0 12px; color:var(--accent); font-variant-numeric:tabular-nums; }
+    .feedback { display:none; position:fixed; inset:0; height:100vh; height:100dvh; width:100vw;
+      z-index:99999; flex-direction:column; justify-content:center; align-items:center;
+      text-align:center; padding:22px; color:#fff; }
+    .feedback.visible { display:flex; }
+    .feedback strong { font-size:clamp(2.9rem,15vw,6.2rem); line-height:1.1; font-weight:900; }
+    .feedback p { margin:20px auto; font-size:clamp(1.1rem,5vw,1.6rem); font-weight:650; max-width:550px; }
+    #validFeedback { background:#128451; }
+    #invalidFeedback { background:#d71920; }
+    #invalidFeedback.visible { animation:flash-red .8s ease-in-out infinite; }
+    @keyframes flash-red { 0%,100% {background:#d71920} 50% {background:#ff4747} }
+    @media (prefers-reduced-motion:reduce) { #invalidFeedback.visible {animation:none;} }
+    @media (max-width:360px) { .panel {padding:11px;} }
+    [hidden] {display:none!important}
+</style>
+</head>
+<body>
+  <header class="event-header">
+    <img class="event-art" src="./ilustracion-asamblea.jpg"
+         alt="Ilustración del programa de la asamblea de circuito"
+         width="1200" height="600">
+    <p class="eyebrow">ASAMBLEA DE CIRCUITO · 2026–2027</p>
+    <p class="day-label">DOMINGO</p>
+    <p class="date-label">15 DE NOVIEMBRE DEL 2026</p>
+    <p class="stage-label">ACCESO AL ESCENARIO</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="Lector de códigos QR">
+      <div id="reader"></div>
+      <p id="status" role="status" aria-live="polite">Presione “Iniciar cámara” para escanear.</p>
+      <div class="actions">
+        <button id="startButton" type="button">Iniciar cámara</button>
+        <button id="stopButton" type="button" class="secondary" disabled>Detener</button>
+      </div>
+      <div class="count">
+        <span>Escaneos válidos en este dispositivo</span>
+        <strong id="countNumber">0</strong>
+        <button type="button" class="secondary" id="resetButton">Reiniciar conteo local</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="validFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso válido">
+    <strong>VÁLIDO ✅</strong><p>Acceso al escenario autorizado</p>
+  </div>
+  <div id="invalidFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso denegado">
+    <strong>NEGADO ❌</strong><p id="invalidReason">Código QR no autorizado</p>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    'use strict';
+    // VALIDATION_START — used verbatim by tests/check.mjs.
+    // Exact contents of the USER'S ORIGINAL QR: two spaces before the date.
+    const EXACT_QR_TEXT = 'El que confia en Jehova es feliz  15 de noviembre del 2026';
+    const EVENT_DATE = '2026-11-15';
+    const EVENT_TIME_ZONE = 'America/Chicago';
+
+    function localEventDate(now = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: EVENT_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(now);
+      const get = type => parts.find(p => p.type === type)?.value;
+      return `${get('year')}-${get('month')}-${get('day')}`;
+    }
+
+    function validateQR(decodedText, now = new Date()) {
+      if (decodedText !== EXACT_QR_TEXT) return { valid:false, reason:'Código QR no autorizado' };
+      if (localEventDate(now) !== EVENT_DATE) return { valid:false, reason:'Fuera de la fecha autorizada' };
+      return { valid:true, reason:'' };
+    }
+    // VALIDATION_END
+
+    const $ = id => document.getElementById(id);
+    const COUNT_KEY = 'lfah-valid-local-2026-11-15';
+    let count = Number(localStorage.getItem(COUNT_KEY)) || 0;
+    let scanner = null;
+    let busy = false;
+    let timer = null;
+    $('countNumber').textContent = count.toLocaleString('es');
+
+    function setStatus(message, error = false) {
+      $('status').textContent = message;
+      $('status').classList.toggle('error', error);
+    }
+    function showFeedback(valid, reason) {
+      $('validFeedback').classList.toggle('visible', valid);
+      $('invalidFeedback').classList.toggle('visible', !valid);
+      if (!valid) $('invalidReason').textContent = reason;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        $('validFeedback').classList.remove('visible');
+        $('invalidFeedback').classList.remove('visible');
+        busy = false;
+        try { scanner?.resume(); } catch { /* camera may have been stopped */ }
+      }, 3000);
+    }
+    function onQRScanned(decodedText) {
+      if (busy) return;
+      busy = true;
+      try { scanner?.pause(true); } catch { /* busy flag still prevents duplicates */ }
+      const result = validateQR(decodedText);
+      if (result.valid) {
+        count += 1;
+        localStorage.setItem(COUNT_KEY, String(count));
+        $('countNumber').textContent = count.toLocaleString('es');
+      }
+      showFeedback(result.valid, result.reason);
+    }
+    async function startCamera() {
+      if (scanner) return;
+      if (!window.Html5Qrcode) {
+        setStatus('No se pudo cargar el lector. Conecte a internet para cargar la biblioteca de cámara.', true);
+        return;
+      }
+      $('startButton').disabled = true;
+      try {
+        scanner = new Html5Qrcode('reader');
+        await scanner.start({facingMode:'environment'}, {
+          fps:12,
+          qrbox:(w,h) => { const s = Math.max(120,Math.min(330,Math.floor(Math.min(w,h)*.78))); return {width:s,height:s}; }
+        }, onQRScanned);
+        $('stopButton').disabled = false;
+        setStatus('Cámara activa. Coloque el QR dentro del recuadro.');
+      } catch {
+        scanner = null;
+        $('startButton').disabled = false;
+        setStatus('No se pudo activar la cámara. Conceda permiso y use una página HTTPS.', true);
+      }
+    }
+    async function stopCamera() {
+      $('stopButton').disabled = true;
+      window.clearTimeout(timer);
+      $('validFeedback').classList.remove('visible');
+      $('invalidFeedback').classList.remove('visible');
+      busy = false;
+      if (scanner) {
+        try { await scanner.stop(); } catch { /* if not started */ }
+        try { scanner.clear(); } catch { /* if not initialized */ }
+        scanner = null;
+      }
+      $('startButton').disabled = false;
+      setStatus('Cámara detenida.');
+    }
+    $('startButton').addEventListener('click', startCamera);
+    $('stopButton').addEventListener('click', stopCamera);
+    $('resetButton').addEventListener('click', () => {
+      if (window.confirm('¿Reiniciar el conteo de este dispositivo a cero?')) {
+        count = 0;
+        localStorage.setItem(COUNT_KEY, '0');
+        $('countNumber').textContent = '0';
+      }
+    });
+  </script>
+</body>
+</html>
