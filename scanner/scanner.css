@@ -1,0 +1,6 @@
+:root { color-scheme: dark; font: 18px system-ui, sans-serif; background: #121212; color: white; }
+main { max-width: 28rem; padding: 1rem; margin: auto; text-align: center; }
+#status { padding: 1rem; background: #292929; border-radius: .6rem; font-weight: bold; }
+#status[data-result="allowed"] { background: #176436; }
+#status[data-result="denied"] { background: #992b35; }
+button { padding: .85rem 1.2rem; font: inherit; }

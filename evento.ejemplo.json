@@ -1,0 +1,6 @@
+{
+  "id": "asamblea-demo",
+  "nombre": "Asamblea de demostración",
+  "zona": "America/Chicago",
+  "fechas": ["2030-06-01", "2030-06-02"]
+}

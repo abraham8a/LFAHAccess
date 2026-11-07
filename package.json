@@ -1,0 +1,28 @@
+{
+  "name": "lfahaccess",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "node --test access.test.mjs",
+    "start": "node server.mjs",
+    "issue": "node issue.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abraham8a/LFAHAccess.git"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/abraham8a/LFAHAccess/issues"
+  },
+  "homepage": "https://github.com/abraham8a/LFAHAccess#readme",
+  "dependencies": {
+    "html5-qrcode": "2.3.8",
+    "qrcode": "1.5.4"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
