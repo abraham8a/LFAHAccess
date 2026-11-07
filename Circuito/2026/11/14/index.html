@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#5834a5">
+  <title>Acceso 14 de noviembre | Asamblea de circuito</title>
+  <style>
+    :root { font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color-scheme:light; --ink:#272044; --accent:#5834a5; }
+    * { box-sizing:border-box }
+    html,body { margin:0; min-height:100%; }
+    body { background:#f2effd; color:var(--ink); }
+    header { background:linear-gradient(145deg,#ffffff,#f1eaff); border-top:7px solid #7756d2; border-bottom:1px solid #d8cbf6; text-align:center; padding:17px 12px; }
+    header small { font-weight:750; text-transform:uppercase; letter-spacing:.08em; color:#5937a2; }
+    header h1 { font-size:clamp(1.3rem,5vw,1.85rem); line-height:1.25; margin:7px auto; max-width:560px; }
+    header p { margin:0; font-size:.92rem; color:#5b5279; }
+    main { margin:16px auto 32px; padding:0 12px; max-width:510px; }
+    .panel { background:#fff; padding:18px; border:1px solid #d9cdf4; border-radius:17px; box-shadow:0 8px 25px #2e1c6b12; }
+    #reader { width:100%; min-height:220px; border-radius:12px; background:#242039; overflow:hidden; }
+    #status { margin:14px 0; font-size:.95rem; min-height:1.4em; }
+    #status.error { color:#b4232a; font-weight:650; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    button { appearance:none; background:var(--accent); color:white; border:0; border-radius:10px; min-height:46px; padding:10px 17px; font-size:1rem; font-weight:700; cursor:pointer; }
+    button.secondary { background:#efe9ff; color:#4d2b91; border:1px solid #d0c1f6; }
+    button:disabled { cursor:default; opacity:.55; }
+    button:focus-visible { outline:3px solid #9676e8; outline-offset:3px; }
+    .count { text-align:center; margin-top:18px; padding-top:15px; border-top:1px solid #e2d9f5; }
+    .count span { display:block; color:#645d78; letter-spacing:.08em; text-transform:uppercase; font-size:.76rem; font-weight:750; }
+    #countNumber { display:block; font-size:clamp(3rem,16vw,5.5rem); line-height:1.05; font-weight:850; font-variant-numeric:tabular-nums; color:var(--accent); margin:6px 0; }
+    .hint { color:#5d557a; font-size:.82rem; text-align:center; line-height:1.45; }
+    .feedback { display:none; position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; z-index:99999; align-items:center; justify-content:center; flex-direction:column; text-align:center; padding:25px; color:#fff; }
+    .feedback.visible { display:flex; }
+    .feedback strong { font-size:clamp(2.9rem,15vw,6.2rem); line-height:1.1; font-weight:900; }
+    .feedback p { font-size:clamp(1.1rem,5vw,1.6rem); font-weight:600; margin:20px auto; max-width:550px; }
+    #validFeedback { background:#128451; }
+    #invalidFeedback { background:#d71920; }
+    #invalidFeedback.visible { animation:flash-red .8s ease-in-out infinite; }
+    @keyframes flash-red { 0%,100% { background-color:#d71920; } 50% { background-color:#ff4747; } }
+    @media (prefers-reduced-motion:reduce) { #invalidFeedback.visible {animation:none;} }
+    [hidden] {display:none!important}
+  </style>
+</head>
+<body>
+  <header>
+    <small>Escáner del sábado · Asamblea de circuito 2026–2027</small>
+    <h1>“El que confía en Jehová es feliz”</h1>
+    <p>PROVERBIOS 16:20 · SÁBADO 14 DE NOVIEMBRE DE 2026</p>
+  </header>
+
+  <main>
+    <section class="panel" aria-label="Lector de códigos QR">
+      <div id="reader"></div>
+      <p id="status" role="status" aria-live="polite">Presione “Iniciar cámara” para escanear.</p>
+      <div class="actions">
+        <button id="startButton" type="button">Iniciar cámara</button>
+        <button id="stopButton" type="button" class="secondary" disabled>Detener</button>
+      </div>
+      <div class="count">
+        <span>Escaneos válidos en este dispositivo</span>
+        <strong id="countNumber">0</strong>
+        <button type="button" class="secondary" id="resetButton">Reiniciar conteo local</button>
+      </div>
+    </section>
+    <p class="hint">Este escáner es exclusivamente para el sábado 14 de noviembre. Verifica el QR localmente y guarda el conteo solo en este teléfono. Debe abrirse desde HTTPS; la biblioteca de cámara necesita internet para cargarse inicialmente.</p>
+  </main>
+
+  <div id="validFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso válido">
+    <strong>VÁLIDO ✅</strong><p>Acceso autorizado</p>
+  </div>
+  <div id="invalidFeedback" class="feedback" role="alertdialog" aria-modal="true" aria-label="Acceso denegado">
+    <strong>NEGADO ❌</strong><p id="invalidReason">Código QR no autorizado</p>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script>
+    'use strict';
+    // VALIDATION_START — used verbatim by tests/check.mjs.
+    // Exact contents of the supplied QR for November 14: two spaces before the date.
+    const EXACT_QR_TEXT = 'El que confia en Jehova es feliz  14 de noviembre del 2026';
+    const EVENT_DATE = '2026-11-14';
+    const EVENT_TIME_ZONE = 'America/Chicago';
+
+    function localEventDate(now = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: EVENT_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(now);
+      const get = type => parts.find(p => p.type === type)?.value;
+      return `${get('year')}-${get('month')}-${get('day')}`;
+    }
+
+    function validateQR(decodedText, now = new Date()) {
+      if (decodedText !== EXACT_QR_TEXT) return { valid:false, reason:'Código QR no autorizado' };
+      if (localEventDate(now) !== EVENT_DATE) return { valid:false, reason:'Fuera de la fecha autorizada' };
+      return { valid:true, reason:'' };
+    }
+    // VALIDATION_END
+
+    const $ = id => document.getElementById(id);
+    const COUNT_KEY = 'lfah-valid-local-2026-11-14';
+    let count = Number(localStorage.getItem(COUNT_KEY)) || 0;
+    let scanner = null;
+    let busy = false;
+    let timer = null;
+    $('countNumber').textContent = count.toLocaleString('es');
+
+    function setStatus(message, error = false) {
+      $('status').textContent = message;
+      $('status').classList.toggle('error', error);
+    }
+    function showFeedback(valid, reason) {
+      $('validFeedback').classList.toggle('visible', valid);
+      $('invalidFeedback').classList.toggle('visible', !valid);
+      if (!valid) $('invalidReason').textContent = reason;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        $('validFeedback').classList.remove('visible');
+        $('invalidFeedback').classList.remove('visible');
+        busy = false;
+        try { scanner?.resume(); } catch { /* camera may have been stopped */ }
+      }, 3000);
+    }
+    function onQRScanned(decodedText) {
+      if (busy) return;
+      busy = true;
+      try { scanner?.pause(true); } catch { /* busy flag still prevents duplicates */ }
+      const result = validateQR(decodedText);
+      if (result.valid) {
+        count += 1;
+        localStorage.setItem(COUNT_KEY, String(count));
+        $('countNumber').textContent = count.toLocaleString('es');
+      }
+      showFeedback(result.valid, result.reason);
+    }
+    async function startCamera() {
+      if (scanner) return;
+      if (!window.Html5Qrcode) {
+        setStatus('No se pudo cargar el lector. Conecte a internet para cargar la biblioteca de cámara.', true);
+        return;
+      }
+      $('startButton').disabled = true;
+      try {
+        scanner = new Html5Qrcode('reader');
+        await scanner.start({facingMode:'environment'}, {
+          fps:12,
+          qrbox:(w,h) => { const s = Math.max(120,Math.min(330,Math.floor(Math.min(w,h)*.78))); return {width:s,height:s}; }
+        }, onQRScanned);
+        $('stopButton').disabled = false;
+        setStatus('Cámara activa. Coloque el QR dentro del recuadro.');
+      } catch {
+        scanner = null;
+        $('startButton').disabled = false;
+        setStatus('No se pudo activar la cámara. Conceda permiso y use una página HTTPS.', true);
+      }
+    }
+    async function stopCamera() {
+      $('stopButton').disabled = true;
+      window.clearTimeout(timer);
+      $('validFeedback').classList.remove('visible');
+      $('invalidFeedback').classList.remove('visible');
+      busy = false;
+      if (scanner) {
+        try { await scanner.stop(); } catch { /* if not started */ }
+        try { scanner.clear(); } catch { /* if not initialized */ }
+        scanner = null;
+      }
+      $('startButton').disabled = false;
+      setStatus('Cámara detenida.');
+    }
+    $('startButton').addEventListener('click', startCamera);
+    $('stopButton').addEventListener('click', stopCamera);
+    $('resetButton').addEventListener('click', () => {
+      if (window.confirm('¿Reiniciar el conteo de este dispositivo a cero?')) {
+        count = 0;
+        localStorage.setItem(COUNT_KEY, '0');
+        $('countNumber').textContent = '0';
+      }
+    });
+  </script>
+</body>
+</html>
